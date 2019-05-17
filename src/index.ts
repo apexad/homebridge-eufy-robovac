@@ -120,9 +120,6 @@ class EufyRoboVacAccessory {
 			await sleep(2000);
 			await this.roboVac.goHome();
 		}
-		setTimeout(async () => {
-			this.updateCleaningState(await this.roboVac.getPlayPause());
-		}, 1000);
 
 		callback();
 	}
