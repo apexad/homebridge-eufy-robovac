@@ -32,7 +32,7 @@ Homebridge plugin for Eufy RoboVac
         }
       ]
     ``` 
-    You can find out more about the `deviceId`/`localKey` [here](https://github.com/joshstrange/eufy-rob)
+    You can find out more about the `deviceId`/`localKey` [here](https://github.com/joshstrange/eufy-robovac)
 
 3. Restart Homebridge, and your Eufy RoboVac will be added to Home app.
 
