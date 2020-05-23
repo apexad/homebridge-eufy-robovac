@@ -14,7 +14,8 @@
     "webpack-cli": "^3.3.11"
   },
   "scripts": {
-    "build": "webpack"
+    "build": "webpack",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
