@@ -27,15 +27,14 @@ Homebridge plugin for Eufy RoboVac
           "accessory": "Eufy RoboVac",
           "name": "Vacuum Cleaner",
           "deviceId": "<deviceId/devId>",
-          "localKey": "<localKey>"
+          "localKey": "<localKey>",
+          "hideFindButton": <true | false, defaults to false>
         }
       ]
     ``` 
     You can find out more about the `deviceId`/`localKey` [here](https://github.com/joshstrange/eufy-robovac)
 
-3. Restart Homebridge, and your Eufy RoboVac will be added to Home app.
-
-
+3. Restart Homebridge, and your Eufy RoboVac will be added to Home app a fan accessory (since HomeKit does not natively support vacuums).  If `hideFanButton` is not supplied or set to false, a switch that peforms the 'Find' function will also be added.
 
 ### Thank You
 

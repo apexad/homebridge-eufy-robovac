@@ -17,7 +17,7 @@ module.exports = function(homebridge: any) {
 
 class EufyRoboVacAccessory {
 	log: any;
-	config: { name?: string, deviceId: string, localKey: string};
+	config: { name?: string, deviceId: string, localKey: string, hideFindButton?: boolean };
 	services: any[];
 	name: string;
 
@@ -27,12 +27,14 @@ class EufyRoboVacAccessory {
 	findRobot: any;
 
 	roboVac!: RoboVac;
+	hideFindButton: boolean;
 
 	constructor(log: any, config: any) {
 		this.log = log;
 		this.config = config;
 		this.services = [];
 		this.name = this.config.name || 'Eufy RoboVac';
+		this.hideFindButton = this.config.hideFindButton || false;
 
 		// Vacuum cleaner is not available in Homekit yet, register as Fan
 
@@ -68,14 +70,16 @@ class EufyRoboVacAccessory {
 
 		this.services.push(this.batteryService);
 
-		this.findRobot = new Service.Switch("Find " + this.name);
+		if (!this.hideFindButton) {
+			this.findRobot = new Service.Switch("Find " + this.name);
 
-		this.findRobot
-			.getCharacteristic(Characteristic.On)
-			.on('get', this.getFindRobot.bind(this))
-			.on('set', this.setFindRobot.bind(this));
+			this.findRobot
+				.getCharacteristic(Characteristic.On)
+				.on('get', this.getFindRobot.bind(this))
+				.on('set', this.setFindRobot.bind(this));
 
-		this.services.push(this.findRobot);
+			this.services.push(this.findRobot);
+		}
 
 		this.setup();
 	}
