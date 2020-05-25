@@ -1,7 +1,7 @@
 {
   "pluginAlias": "Eufy RoboVac",
   "pluginType": "accessory",
-  "headerDisplay": "For information to obtain deviceId and localKey, go [here](https://github.com/joshstrange/eufy-robovac#readme).",
+  "headerDisplay": "For information on how to obtain deviceId and localKey, go [here](https://github.com/joshstrange/eufy-robovac#readme).",
   "singular": false,
   "schema": {
     "type": "object",
