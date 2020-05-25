@@ -90,7 +90,9 @@ class EufyRoboVacAccessory {
 		this.updateCleaningState(status.dps[this.roboVac.PLAY_PAUSE] as boolean);
 		this.updateBatteryLevel(status.dps[this.roboVac.BATTERY_LEVEL]);
 		this.updateChargingState(status.dps[this.roboVac.WORK_STATUS] === WorkStatus.CHARGING ? Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGEABLE);
-		this.updateFindRobot(status.dps[this.roboVac.FIND_ROBOT] as boolean);
+		if (!this.hideFindButton) {
+			this.updateFindRobot(status.dps[this.roboVac.FIND_ROBOT] as boolean);
+		}
 
 		this.roboVac.api.on('data', (data: StatusResponse) => {
 			if(this.roboVac.PLAY_PAUSE in (data.dps as any)) {
@@ -105,7 +107,7 @@ class EufyRoboVacAccessory {
 				this.updateBatteryLevel((data.dps as any)[this.roboVac.WORK_STATUS] === WorkStatus.CHARGING ? Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGEABLE);
 			}
 
-			if(this.roboVac.FIND_ROBOT in (data.dps as any)) {
+			if((this.roboVac.FIND_ROBOT in (data.dps as any)) && !this.hideFindButton) {
 				this.updateFindRobot((data.dps as any)[this.roboVac.FIND_ROBOT]);
 			}
 		});
