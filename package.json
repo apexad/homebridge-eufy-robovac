@@ -1,6 +1,6 @@
 {
   "name": "homebridge-eufy-robovac",
-  "version": "1.2.0-beta.0",
+  "version": "1.2.0-beta.1",
   "description": "Homebridge support for Eufy RoboVac",
   "main": "dist/index.js",
   "dependencies": {
