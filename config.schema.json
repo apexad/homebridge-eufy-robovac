@@ -1,0 +1,35 @@
+{
+  "pluginAlias": "Eufy Robovac",
+  "pluginType": "accessory",
+  "headerDisplay": "For information to obtain deviceId and localKey, go [here](https://github.com/joshstrange/eufy-robovac#readme).",
+  "singular": false,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Vacuum Cleaner",
+        "required": false
+      },
+      "deviceId": {
+        "title": "Device ID",
+        "type": "string",
+        "required": true
+      },
+      "localKey": {
+        "title": "Local Key",
+        "type": "string",
+        "required": true
+      },
+      "hideFindButton": {
+        "title": "Hide Find Button",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      }
+    }
+  },
+  "form": null,
+  "display": null
+}
