@@ -26,8 +26,7 @@ Homebridge plugin for Eufy RoboVac
         {
           "accessory": "Eufy RoboVac",
           "name": "Vacuum Cleaner",
-          "ip": "<optional ip address, this or deviceId must be set>",
-          "deviceId": "<optional deviceId, this or ip must be set>",
+          "deviceId": "<deviceId/devId>",
           "localKey": "<localKey>"
         }
       ]

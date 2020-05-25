@@ -1,4 +1,8 @@
-import {RoboVac, StatusResponse, WorkStatus} from 'eufy-robovac';
+import {
+	RoboVac,
+	StatusResponse,
+	WorkStatus,
+} from 'eufy-robovac';
 
 let Accessory: any, Service: any, Characteristic: any, UUIDGen: any;
 
@@ -13,7 +17,7 @@ module.exports = function(homebridge: any) {
 
 class EufyRoboVacAccessory {
 	log: any;
-	config: { name?: string, deviceId?: string, localKey: string, ip?: string };
+	config: { name?: string, deviceId: string, localKey: string};
 	services: any[];
 	name: string;
 
