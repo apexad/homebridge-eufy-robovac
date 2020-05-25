@@ -22,7 +22,7 @@ class EufyRoboVacAccessory {
 	serviceInfo: any;
 	findRobot: any;
 
-	roboVac: RoboVac;
+	roboVac!: RoboVac;
 
 	constructor(log: any, config: any) {
 		this.log = log;
