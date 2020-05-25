@@ -4,7 +4,7 @@
   "description": "Homebridge support for Eufy RoboVac",
   "main": "dist/index.js",
   "dependencies": {
-    "eufy-robovac": "^1.4.0-beta.0"
+    "eufy-robovac": "^1.4.0-beta.1"
   },
   "devDependencies": {
     "@types/node": "^12.0.2",
