@@ -15,7 +15,7 @@ Homebridge plugin for Eufy RoboVac
 This easiest way to use this plugin is to use [homebridge-config-ui-x](https://www.npmjs.com/package/homebridge-config-ui-x).  
 To configure manually, add to the `accessories` section of homebridge's `config.json` after installing the plugin.
 
-**Command:** ```npm install -g homebridge-mysmartblinds-bridge```
+**Command:** ```npm install -g homebridge-eufy-robovac```
 
 **Config:**
   ```json
