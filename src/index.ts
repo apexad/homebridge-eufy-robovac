@@ -126,7 +126,7 @@ class EufyRoboVacAccessory {
 
 	updateCleaningState(state: boolean) {
 		this.log.debug('Cleaning State -> %s', state);
-		this.fanService.setCharacteristic(Characteristic.On, state);
+		this.fanService.getCharacteristic(Characteristic.On).updateValue(state)
 	}
 
 	async getCleanState(callback: Function) {
