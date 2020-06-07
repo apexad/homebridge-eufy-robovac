@@ -27,6 +27,12 @@
         "type": "boolean",
         "required": false,
         "default": false
+      },
+      "debugLog": {
+        "title": "Enable Debug Log",
+        "type": "boolean",
+        "required": false,
+        "default": false
       }
     }
   },

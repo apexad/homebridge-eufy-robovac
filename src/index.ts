@@ -17,7 +17,13 @@ module.exports = function(homebridge: any) {
 
 class EufyRoboVacAccessory {
 	log: any;
-	config: { name?: string, deviceId: string, localKey: string, hideFindButton?: boolean };
+	config: {
+		name?: string,
+		deviceId: string,
+		localKey: string,
+		hideFindButton?: boolean,
+		debugLog?: boolean,
+	};
 	services: any[];
 	name: string;
 
@@ -28,13 +34,18 @@ class EufyRoboVacAccessory {
 
 	roboVac!: RoboVac;
 	hideFindButton: boolean;
+	debugLog: boolean;
 
 	constructor(log: any, config: any) {
 		this.log = log;
-		this.config = config;
+		this.config = {
+			deviceId: config.deviceId,
+			localKey: config.localKey,
+		};
 		this.services = [];
 		this.name = this.config.name || 'Eufy RoboVac';
 		this.hideFindButton = this.config.hideFindButton || false;
+		this.debugLog = this.config.debugLog;
 
 		// Vacuum cleaner is not available in Homekit yet, register as Fan
 
@@ -85,7 +96,7 @@ class EufyRoboVacAccessory {
 	}
 
 	async setup() {
-		this.roboVac = new RoboVac(this.config);
+		this.roboVac = new RoboVac(this.config, this.debugLog);
 		let status = await this.roboVac.getStatuses();
 		this.updateCleaningState(status.dps[this.roboVac.PLAY_PAUSE] as boolean);
 		this.updateBatteryLevel(status.dps[this.roboVac.BATTERY_LEVEL]);
@@ -115,7 +126,7 @@ class EufyRoboVacAccessory {
 
 	updateCleaningState(state: boolean) {
 		this.log.debug('Cleaning State -> %s', state);
-		this.fanService.getCharacteristic(Characteristic.On).updateValue(state)
+		this.fanService.setCharacteristic(Characteristic.On, state);
 	}
 
 	async getCleanState(callback: Function) {

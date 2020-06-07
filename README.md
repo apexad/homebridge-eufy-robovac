@@ -24,13 +24,15 @@ To configure manually, add to the `accessories` section of homebridge's `config.
       "name": "Vacuum Cleaner",
       "deviceId": "<deviceId/devId>",
       "localKey": "<localKey>",
-      "hideFindButton": "<true | false, defaults to false>"
+      "hideFindButton": "<true | false, defaults to false>",
+      "debugLog": "<true | false, defaults to false>"
     }
   ``` 
 You can find out more about the `deviceId`/`localKey` [here](https://github.com/joshstrange/eufy-robovac)
 
 Eufy RoboVac will be added to Home app a fan accessory (since HomeKit does not natively support vacuums).  
-If `hideFanButton` is not supplied or set to false, a switch that performs the 'Find' function will also be added.
+If `hideFindButton` is not supplied or set to false, a switch that performs the 'Find' function will also be added.  
+if `debugLog` is enabled (set to true), the underlying library will outut many logs.
 
 ### Thank You
 
