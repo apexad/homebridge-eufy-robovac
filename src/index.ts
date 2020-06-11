@@ -43,9 +43,9 @@ class EufyRoboVacAccessory {
 			localKey: config.localKey,
 		};
 		this.services = [];
-		this.name = this.config.name || 'Eufy RoboVac';
-		this.hideFindButton = this.config.hideFindButton || false;
-		this.debugLog = this.config.debugLog;
+		this.name = config.name || 'Eufy RoboVac';
+		this.hideFindButton = config.hideFindButton || false;
+		this.debugLog = config.debugLog;
 
 		// Vacuum cleaner is not available in Homekit yet, register as Fan
 
