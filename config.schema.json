@@ -28,6 +28,12 @@
         "required": false,
         "default": false
       },
+      "useSwitchService": {
+        "title": "Use Switch for Vacuum (Default is Fan)",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
       "debugLog": {
         "title": "Enable Debug Log",
         "type": "boolean",

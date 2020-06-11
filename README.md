@@ -25,6 +25,7 @@ To configure manually, add to the `accessories` section of homebridge's `config.
       "deviceId": "<deviceId/devId>",
       "localKey": "<localKey>",
       "hideFindButton": "<true | false, defaults to false>",
+      "useSwitchService": "<true | false, defaults to false>",
       "debugLog": "<true | false, defaults to false>"
     }
   ``` 

@@ -27,7 +27,7 @@ class EufyRoboVacAccessory {
 	services: any[];
 	name: string;
 
-	fanService: any;
+	vacuumService: any;
 	batteryService: any;
 	serviceInfo: any;
 	findRobot: any;
@@ -57,14 +57,14 @@ class EufyRoboVacAccessory {
 
 		this.services.push(this.serviceInfo);
 
-		this.fanService = new Service.Fan(this.name);
+		this.vacuumService = config.useSwitchService ? new Service.Switch(this.name) : new Service.Fan(this.name);
 
-		this.fanService
+		this.vacuumService
 			.getCharacteristic(Characteristic.On)
 			.on('get', this.getCleanState.bind(this))
 			.on('set', this.setCleanState.bind(this));
 
-		this.services.push(this.fanService);
+		this.services.push(this.vacuumService);
 
 		this.batteryService = new Service.BatteryService(this.name + ' Battery');
 		this.batteryService
@@ -126,7 +126,7 @@ class EufyRoboVacAccessory {
 
 	updateCleaningState(state: boolean) {
 		this.log.debug('Cleaning State -> %s', state);
-		this.fanService.getCharacteristic(Characteristic.On).updateValue(state)
+		this.vacuumService.getCharacteristic(Characteristic.On).updateValue(state)
 	}
 
 	async getCleanState(callback: Function) {
