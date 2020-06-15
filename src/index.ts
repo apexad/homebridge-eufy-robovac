@@ -36,9 +36,11 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   private readonly informationService: Service;
   private readonly batteryService: Service;
   private readonly findRobotService: Service | undefined;
+  private readonly errorSensorService: Service | undefined;
   private roboVac!: RoboVac;
   private readonly config: { deviceId: any; localKey: any; };
   private readonly hideFindButton: boolean;
+  private readonly hideErrorSensor: boolean;
   private readonly debugLog: boolean;
   services: Service[];
 
@@ -46,6 +48,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     this.log = log;
     this.name = config.name || 'Eufy RoboVac';
     this.hideFindButton = config.hideFindButton;
+    this.hideErrorSensor = config.hideErrorSensor;
 
     this.debugLog = config.debugLog;
     this.config = {
@@ -86,6 +89,16 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
         .on(CharacteristicEventTypes.SET, this.setFindRobot.bind(this));
 
       this.services.push(this.findRobotService);
+    }
+
+    if (!this.hideErrorSensor) {
+      this.errorSensorService = new hap.Service.MotionSensor(`Error ${this.name}`);
+
+      this.errorSensorService
+        .getCharacteristic(hap.Characteristic.MotionDetected)
+        .on(CharacteristicEventTypes.GET, this.getErrorStatus.bind(this))
+
+      this.services.push(this.errorSensorService);
     }
 
     this.setup();
@@ -135,6 +148,10 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     this.log.debug(`setFindRobot for ${this.name} set to ${state}`);
     await this.roboVac.setFindRobot(state as boolean);
     callback();
+  }
+
+  async getErrorStatus(callback: CharacteristicGetCallback) {
+    callback(null, (await this.roboVac.getErrorCode() === 'no_error') ? false : true);
   }
 
   identify(): void {
