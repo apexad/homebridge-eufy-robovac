@@ -14,13 +14,13 @@ import {
   HAP,
   Logging,
   Service
-} from "homebridge";
+} from 'homebridge';
 
 let hap: HAP;
 
 export = (api: API) => {
   hap = api.hap;
-  api.registerAccessory("Eufy RoboVac", EufyRoboVacAccessory);
+  api.registerAccessory('Eufy RoboVac', EufyRoboVacAccessory);
 };
 
 function sleep(ms: number) {
@@ -61,8 +61,8 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     this.services.push(this.vacuumService);
 
     this.informationService = new hap.Service.AccessoryInformation()
-      .setCharacteristic(hap.Characteristic.Manufacturer, "Eufy")
-      .setCharacteristic(hap.Characteristic.Model, "RoboVac");
+      .setCharacteristic(hap.Characteristic.Manufacturer, 'Eufy')
+      .setCharacteristic(hap.Characteristic.Model, 'RoboVac');
     this.services.push(this.informationService);
 
     this.batteryService = new hap.Service.BatteryService(this.name + ' Battery');
@@ -78,7 +78,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     this.services.push(this.batteryService);
 
     if (!this.hideFindButton) {
-      this.findRobotService = new hap.Service.Switch("Find " + this.name);
+      this.findRobotService = new hap.Service.Switch(`Find ${this.name}`);
 
       this.findRobotService
         .getCharacteristic(hap.Characteristic.On)
@@ -138,11 +138,10 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   }
 
   identify(): void {
-    this.log("Identify!");
+    this.log('Identify!');
   }
 
   getServices(): Service[] {
     return this.services;
   }
-
 }
