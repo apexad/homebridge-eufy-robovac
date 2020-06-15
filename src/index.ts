@@ -1,196 +1,148 @@
 import {
-	RoboVac,
-	StatusResponse,
-	WorkStatus,
+  RoboVac,
+  WorkStatus,
 } from 'eufy-robovac';
 
-let Accessory: any, Service: any, Characteristic: any, UUIDGen: any;
+import {
+  AccessoryConfig,
+  AccessoryPlugin,
+  API,
+  CharacteristicEventTypes,
+  CharacteristicGetCallback,
+  CharacteristicSetCallback,
+  CharacteristicValue,
+  HAP,
+  Logging,
+  Service
+} from "homebridge";
 
+let hap: HAP;
 
-module.exports = function(homebridge: any) {
-	Accessory = homebridge.platformAccessory;
-	Service = homebridge.hap.Service;
-	Characteristic = homebridge.hap.Characteristic;
-
-	homebridge.registerAccessory('homebridge-eufy-robovac', 'Eufy RoboVac', EufyRoboVacAccessory);
+export = (api: API) => {
+  hap = api.hap;
+  api.registerAccessory("Eufy RoboVac", EufyRoboVacAccessory);
 };
-
-class EufyRoboVacAccessory {
-	log: any;
-	config: {
-		name?: string,
-		deviceId: string,
-		localKey: string,
-		hideFindButton?: boolean,
-		debugLog?: boolean,
-	};
-	services: any[];
-	name: string;
-
-	vacuumService: any;
-	batteryService: any;
-	serviceInfo: any;
-	findRobot: any;
-
-	roboVac!: RoboVac;
-	hideFindButton: boolean;
-	debugLog: boolean;
-
-	constructor(log: any, config: any) {
-		this.log = log;
-		this.config = {
-			deviceId: config.deviceId,
-			localKey: config.localKey,
-		};
-		this.services = [];
-		this.name = config.name || 'Eufy RoboVac';
-		this.hideFindButton = config.hideFindButton || false;
-		this.debugLog = config.debugLog;
-
-		// Vacuum cleaner is not available in Homekit yet, register as Fan
-
-		this.serviceInfo = new Service.AccessoryInformation();
-
-		this.serviceInfo
-			.setCharacteristic(Characteristic.Manufacturer, 'Eufy')
-			.setCharacteristic(Characteristic.Model, 'RoboVac');
-
-		this.services.push(this.serviceInfo);
-
-		this.vacuumService = config.useSwitchService ? new Service.Switch(this.name) : new Service.Fan(this.name);
-
-		this.vacuumService
-			.getCharacteristic(Characteristic.On)
-			.on('get', this.getCleanState.bind(this))
-			.on('set', this.setCleanState.bind(this));
-
-		this.services.push(this.vacuumService);
-
-		this.batteryService = new Service.BatteryService(this.name + ' Battery');
-		this.batteryService
-			.getCharacteristic(Characteristic.BatteryLevel)
-			.on('get', this.getBatteryLevel.bind(this));
-
-		this.batteryService
-			.getCharacteristic(Characteristic.ChargingState)
-			.on('get', this.getChargingState.bind(this));
-
-		this.batteryService
-			.getCharacteristic(Characteristic.StatusLowBattery)
-			.on('get', this.getStatusLowBattery.bind(this));
-
-		this.services.push(this.batteryService);
-
-		if (!this.hideFindButton) {
-			this.findRobot = new Service.Switch("Find " + this.name);
-
-			this.findRobot
-				.getCharacteristic(Characteristic.On)
-				.on('get', this.getFindRobot.bind(this))
-				.on('set', this.setFindRobot.bind(this));
-
-			this.services.push(this.findRobot);
-		}
-
-		this.setup();
-	}
-
-	async setup() {
-		this.roboVac = new RoboVac(this.config, this.debugLog);
-		let status = await this.roboVac.getStatuses();
-		this.updateCleaningState(status.dps[this.roboVac.PLAY_PAUSE] as boolean);
-		this.updateBatteryLevel(status.dps[this.roboVac.BATTERY_LEVEL]);
-		this.updateChargingState(status.dps[this.roboVac.WORK_STATUS] === WorkStatus.CHARGING ? Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGEABLE);
-		if (!this.hideFindButton) {
-			this.updateFindRobot(status.dps[this.roboVac.FIND_ROBOT] as boolean);
-		}
-
-		this.roboVac.api.on('data', (data: StatusResponse) => {
-			if(this.roboVac.PLAY_PAUSE in (data.dps as any)) {
-				this.updateCleaningState((data.dps as any)[this.roboVac.PLAY_PAUSE]);
-			}
-
-			if(this.roboVac.BATTERY_LEVEL in (data.dps as any)) {
-				this.updateBatteryLevel((data.dps as any)[this.roboVac.BATTERY_LEVEL]);
-			}
-
-			if(this.roboVac.WORK_STATUS in (data.dps as any)) {
-				this.updateBatteryLevel((data.dps as any)[this.roboVac.WORK_STATUS] === WorkStatus.CHARGING ? Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGEABLE);
-			}
-
-			if((this.roboVac.FIND_ROBOT in (data.dps as any)) && !this.hideFindButton) {
-				this.updateFindRobot((data.dps as any)[this.roboVac.FIND_ROBOT]);
-			}
-		});
-	}
-
-	updateCleaningState(state: boolean) {
-		this.log.debug('Cleaning State -> %s', state);
-		this.vacuumService.getCharacteristic(Characteristic.On).updateValue(state)
-	}
-
-	async getCleanState(callback: Function) {
-		this.log.debug("getCleanState");
-		callback(null, await this.roboVac.getPlayPause());
-	}
-
-	async setCleanState(state: boolean, callback: Function) {
-		this.log.debug("setCleanState", state);
-		await this.roboVac.setPlayPause(state);
-		if(!state) {
-			await sleep(2000);
-			await this.roboVac.goHome();
-		}
-
-		callback();
-	}
-
-	updateBatteryLevel(level: any) {
-		this.log.debug('Battery Level -> %s', level);
-		this.batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(level);
-	}
-
-	async getBatteryLevel(callback: Function) {
-		this.log.debug("getBatteryLevel");
-		callback(null, await this.roboVac.getBatteyLevel());
-	}
-
-	updateChargingState(state: any) {
-		this.log.debug('Charging State -> %s', state);
-		this.batteryService.getCharacteristic(Characteristic.ChargingState).updateValue(state);
-	}
-
-	async getChargingState(callback: Function) {
-		callback(null, (await this.roboVac.getWorkStatus() === WorkStatus.CHARGING) ? Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGEABLE);
-	}
-
-	async getStatusLowBattery(callback: Function) {
-		callback(null, (await this.roboVac.getBatteyLevel() < 30) ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
-	}
-
-	updateFindRobot(state: boolean) {
-		this.log.debug('Find Robot -> %s', state);
-		this.findRobot.getCharacteristic(Characteristic.On).updateValue(state);
-	}
-
-	async getFindRobot(callback: Function) {
-		callback(null, await this.roboVac.getFindRobot());
-	}
-
-	async setFindRobot(state: boolean, callback: Function) {
-		await this.roboVac.setFindRobot(state);
-		callback();
-	}
-
-	identify(callback: Function) {
-		callback();
-	}
-	getServices() {
-		return this.services;
-	}
-}
-
 
 function sleep(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+class EufyRoboVacAccessory implements AccessoryPlugin {
+
+  private readonly log: Logging;
+  private readonly name: string;
+
+  private readonly vacuumService: Service;
+  private readonly informationService: Service;
+  private readonly batteryService: Service;
+  private readonly findRobotService: Service | undefined;
+  private roboVac!: RoboVac;
+  private readonly config: { deviceId: any; localKey: any; };
+  private readonly hideFindButton: boolean;
+  private readonly debugLog: boolean;
+  services: Service[];
+
+  constructor(log: Logging, config: AccessoryConfig, api: API) {
+    this.log = log;
+    this.name = config.name || 'Eufy RoboVac';
+    this.hideFindButton = config.hideFindButton;
+
+    this.debugLog = config.debugLog;
+    this.config = {
+      deviceId: config.deviceId,
+      localKey: config.localKey,
+    };
+    this.services = [];
+
+    this.vacuumService = config.useSwitchService ? new hap.Service.Switch(this.name) : new hap.Service.Fan(this.name);
+    this.vacuumService.getCharacteristic(hap.Characteristic.On)
+      .on(CharacteristicEventTypes.GET, this.getCleanState.bind(this))
+      .on(CharacteristicEventTypes.SET, this.setCleanState.bind(this));
+    this.services.push(this.vacuumService);
+
+    this.informationService = new hap.Service.AccessoryInformation()
+      .setCharacteristic(hap.Characteristic.Manufacturer, "Eufy")
+      .setCharacteristic(hap.Characteristic.Model, "RoboVac");
+    this.services.push(this.informationService);
+
+    this.batteryService = new hap.Service.BatteryService(this.name + ' Battery');
+    this.batteryService.getCharacteristic(hap.Characteristic.BatteryLevel)
+      .on(CharacteristicEventTypes.GET, this.getBatteryLevel.bind(this));
+
+    this.batteryService
+      .getCharacteristic(hap.Characteristic.ChargingState)
+      .on(CharacteristicEventTypes.GET, this.getChargingState.bind(this));
+
+    this.batteryService.getCharacteristic(hap.Characteristic.StatusLowBattery)
+      .on(CharacteristicEventTypes.GET, this.getStatusLowBattery.bind(this));
+    this.services.push(this.batteryService);
+
+    if (!this.hideFindButton) {
+      this.findRobotService = new hap.Service.Switch("Find " + this.name);
+
+      this.findRobotService
+        .getCharacteristic(hap.Characteristic.On)
+        .on(CharacteristicEventTypes.GET, this.getFindRobot.bind(this))
+        .on(CharacteristicEventTypes.SET, this.setFindRobot.bind(this));
+
+      this.services.push(this.findRobotService);
+    }
+
+    this.setup();
+    log.info(`${this.name} finished initializing!`);
+  }
+
+  async setup() {
+		this.roboVac = new RoboVac(this.config, this.debugLog);
+    await this.roboVac.getStatuses();
+  }
+
+  async getCleanState(callback: CharacteristicGetCallback) {
+    const cleanState = await this.roboVac.getPlayPause(true);
+    this.log.debug(`getCleanState for ${this.name} returned ${cleanState}`);
+    callback(undefined, cleanState);
+  }
+
+  async setCleanState(state: CharacteristicValue, callback: CharacteristicSetCallback) {
+    this.log.debug(`setCleanState for ${this.name} set to ${state}`);
+    await this.roboVac.setPlayPause(state as boolean);
+    if(!state) {
+      await sleep(2000);
+      await this.roboVac.goHome();
+    }
+    callback();
+  }
+
+  async getBatteryLevel(callback: CharacteristicGetCallback) {
+    this.log.debug(`getBatteryLevel for ${this.name}`);
+    callback(null, await this.roboVac.getBatteyLevel());
+  }
+
+  async getChargingState(callback: CharacteristicGetCallback) {
+    callback(null, (await this.roboVac.getWorkStatus() === WorkStatus.CHARGING) ? hap.Characteristic.ChargingState.CHARGING : hap.Characteristic.ChargingState.NOT_CHARGEABLE);
+  }
+
+  async getStatusLowBattery(callback: CharacteristicGetCallback) {
+    callback(null, (await this.roboVac.getBatteyLevel() < 30) ? hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+  }
+
+  async getFindRobot(callback: CharacteristicGetCallback) {
+    this.log.debug(`getFindRobot for ${this.name}`);
+    callback(null, await this.roboVac.getFindRobot());
+	}
+
+  async setFindRobot(state: CharacteristicValue, callback: CharacteristicSetCallback) {
+    this.log.debug(`setFindRobot for ${this.name} set to ${state}`);
+    await this.roboVac.setFindRobot(state as boolean);
+    callback();
+  }
+
+  identify(): void {
+    this.log("Identify!");
+  }
+
+  getServices(): Service[] {
+    return this.services;
+  }
+
 }
