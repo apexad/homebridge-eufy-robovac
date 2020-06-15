@@ -57,7 +57,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     };
     this.services = [];
 
-    this.vacuumService = config.useSwitchService ? new hap.Service.Switch(this.name) : new hap.Service.Fan(this.name);
+    this.vacuumService = config.useSwitchService ? new hap.Service.Switch(this.name, 'vacuum') : new hap.Service.Fan(this.name, 'vacuum');
     this.vacuumService.getCharacteristic(hap.Characteristic.On)
       .on(CharacteristicEventTypes.GET, this.getCleanState.bind(this))
       .on(CharacteristicEventTypes.SET, this.setCleanState.bind(this));
@@ -81,7 +81,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     this.services.push(this.batteryService);
 
     if (!this.hideFindButton) {
-      this.findRobotService = new hap.Service.Switch(`Find ${this.name}`);
+      this.findRobotService = new hap.Service.Switch(`Find ${this.name}`, 'find');
 
       this.findRobotService
         .getCharacteristic(hap.Characteristic.On)
