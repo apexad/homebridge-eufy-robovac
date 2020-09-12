@@ -107,13 +107,19 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
 
   async setup() {
 		this.roboVac = new RoboVac(this.config, this.debugLog);
-    await this.roboVac.getStatuses();
+    return await this.roboVac.getStatuses();
   }
 
   async getCleanState(callback: CharacteristicGetCallback) {
-    const cleanState = await this.roboVac.getPlayPause(true);
-    this.log.debug(`getCleanState for ${this.name} returned ${cleanState}`);
-    callback(undefined, cleanState);
+    let cleanState;
+    try {
+      cleanState = await this.roboVac.getPlayPause(true);
+      this.log.debug(`getCleanState for ${this.name} returned ${cleanState}`);
+      callback(undefined, cleanState);
+    } catch(e) {
+      await this.setup();
+      this.getCleanState(callback);
+    }
   }
 
   async setCleanState(state: CharacteristicValue, callback: CharacteristicSetCallback) {
