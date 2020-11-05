@@ -8,9 +8,9 @@
   },
   "devDependencies": {
     "@types/node": "10.17.19",
-    "typescript": "^3.8.3",
+    "homebridge": "^1.1.6",
     "rimraf": "^3.0.2",
-    "homebridge": "^1.1.0"
+    "typescript": "^3.9.7"
   },
   "scripts": {
     "build": "rimraf ./dist && tsc",
