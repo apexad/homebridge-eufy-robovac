@@ -1,6 +1,8 @@
 # homebridge-eufy-robovac
 Homebridge plugin for Eufy RoboVac
 
+Fork of [apexad/homebridge-eufy-robovac](https://github.com/apexad/homebridge-eufy-robovac) to attempt a big refactor with the hope of fixing issue [#34](https://github.com/apexad/homebridge-eufy-robovac/issues/34).
+
 ### Features
 
 * Switch on / off. When off, it will returning to charging dock automatically.
