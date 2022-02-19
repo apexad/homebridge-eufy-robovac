@@ -33,21 +33,14 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
 
   private readonly vacuumService: Service;
   private readonly informationService: Service;
-  private readonly batteryService: Service;
-  private readonly findRobotService: Service | undefined;
-  private readonly errorSensorService: Service | undefined;
   private roboVac!: RoboVac;
   private readonly config: { deviceId: any; localKey: any; };
-  private readonly hideFindButton: boolean;
-  private readonly hideErrorSensor: boolean;
   private readonly debugLog: boolean;
   services: Service[];
 
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name || 'Eufy RoboVac';
-    this.hideFindButton = config.hideFindButton;
-    this.hideErrorSensor = config.hideErrorSensor;
 
     this.debugLog = config.debugLog;
     this.config = {
@@ -66,39 +59,6 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
       .setCharacteristic(hap.Characteristic.Manufacturer, 'Eufy')
       .setCharacteristic(hap.Characteristic.Model, 'RoboVac');
     this.services.push(this.informationService);
-
-    this.batteryService = new hap.Service.BatteryService(this.name + ' Battery');
-    this.batteryService.getCharacteristic(hap.Characteristic.BatteryLevel)
-      .on(CharacteristicEventTypes.GET, this.getBatteryLevel.bind(this));
-
-    this.batteryService
-      .getCharacteristic(hap.Characteristic.ChargingState)
-      .on(CharacteristicEventTypes.GET, this.getChargingState.bind(this));
-
-    this.batteryService.getCharacteristic(hap.Characteristic.StatusLowBattery)
-      .on(CharacteristicEventTypes.GET, this.getStatusLowBattery.bind(this));
-    this.services.push(this.batteryService);
-
-    if (!this.hideFindButton) {
-      this.findRobotService = new hap.Service.Switch(`Find ${this.name}`, 'find');
-
-      this.findRobotService
-        .getCharacteristic(hap.Characteristic.On)
-        .on(CharacteristicEventTypes.GET, this.getFindRobot.bind(this))
-        .on(CharacteristicEventTypes.SET, this.setFindRobot.bind(this));
-
-      this.services.push(this.findRobotService);
-    }
-
-    if (!this.hideErrorSensor) {
-      this.errorSensorService = new hap.Service.MotionSensor(`Error ${this.name}`);
-
-      this.errorSensorService
-        .getCharacteristic(hap.Characteristic.MotionDetected)
-        .on(CharacteristicEventTypes.GET, this.getErrorStatus.bind(this))
-
-      this.services.push(this.errorSensorService);
-    }
 
     this.setup();
     log.info(`${this.name} finished initializing!`);
