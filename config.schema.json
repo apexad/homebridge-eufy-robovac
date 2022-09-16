@@ -12,6 +12,12 @@
         "default": "Vacuum Cleaner",
         "required": false
       },
+      "ip": {
+        "title": "IP address",
+        "type": "string",
+        "default": "",
+        "required": false
+      },
       "deviceId": {
         "title": "Device ID",
         "type": "string",
