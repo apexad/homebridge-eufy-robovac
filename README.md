@@ -22,6 +22,7 @@ To configure manually, add to the `accessories` section of homebridge's `config.
     {
       "accessory": "Eufy RoboVac",
       "name": "Vacuum Cleaner",
+      "ip": "<IP address of your vacuum cleaner>",
       "deviceId": "<deviceId/devId>",
       "localKey": "<localKey>",
       "hideFindButton": "<true | false, defaults to false>",

@@ -34,7 +34,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   private readonly vacuumService: Service;
   private readonly informationService: Service;
   private roboVac!: RoboVac;
-  private readonly config: { deviceId: any; localKey: any; };
+  private readonly config: { deviceId: any; localKey: any; ip: any; };
   private readonly debugLog: boolean;
   services: Service[];
 
@@ -46,6 +46,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     this.config = {
       deviceId: config.deviceId,
       localKey: config.localKey,
+      ip: config.ip,
     };
     this.services = [];
 
