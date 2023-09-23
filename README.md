@@ -72,9 +72,6 @@ Device: RoboVac, device ID <device ID>, local key <local key>
 
 This will list all the devices in all the "homes" on your account. Note that it's unclear whether you can have more than one "home" in Eufy.
 
----
-
-You can include this updated section in your README by following the steps outlined in my previous answer to create a pull request.
 ### Thank You
 
 * [mitchellrj](https://github.com/mitchellrj) - Did most of the legwork in figuring out how to talk to the Eufy
