@@ -41,20 +41,7 @@ if `debugLog` is enabled (set to true), the underlying library will outut many l
 
 ### Get Device ID & Local Key
 
-There are multiple ways to get the `deviceId`/`localKey`. Here are two methods you can use:
-
-#### Method 1: Using BlueStacks and ADB
-
-1. Install [BlueStacks](https://www.bluestacks.com/). 
-2. Install [ADB](https://stackoverflow.com/questions/17901692/set-up-adb-on-mac-os-x) (this requires HomeBrew on macOS).
-3. Install [EufyHome 2.3.2](https://www.apkmirror.com/apk/anker/eufyhome/eufyhome-2-3-2-release/eufyhome-2-3-2-android-apk-download/) in the emulator (double-click the app and it should auto-install).
-4. Follow the [instructions to log the data](https://github.com/joshstrange/eufy-robovac).
-
-#### Method 2: Using eufy-clean-local-key-grabber Repository
-
-For a more straightforward approach, you can also use the [`eufy-clean-local-key-grabber`](https://github.com/Rjevski/eufy-clean-local-key-grabber/tree/master) repository.
-
-**Usage/TL;DR:**
+To get the `deviceId`/`localKey` use the [`eufy-clean-local-key-grabber`](https://github.com/Rjevski/eufy-clean-local-key-grabber/tree/master) repository.
 
 In a somewhat recent Python 3 environment (Python 3.9 was used for development), execute the following commands:
 
