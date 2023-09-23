@@ -41,13 +41,40 @@ if `debugLog` is enabled (set to true), the underlying library will outut many l
 
 ### Get Device ID & Local Key
 
-There are multiple ways to get the `deviceId`/`localKey`, but here are the steps which worked for me:
+There are multiple ways to get the `deviceId`/`localKey`. Here are two methods you can use:
+
+#### Method 1: Using BlueStacks and ADB
 
 1. Install [BlueStacks](https://www.bluestacks.com/). 
-1. Install [ADB](https://stackoverflow.com/questions/17901692/set-up-adb-on-mac-os-x) (this requires HomeBrew on macOS).
-1. Install [EufyHome 2.3.2](https://www.apkmirror.com/apk/anker/eufyhome/eufyhome-2-3-2-release/eufyhome-2-3-2-android-apk-download/) in the emulator (double click the app and it should auto install).
-1. Follow the [instructions to log the data](https://github.com/joshstrange/eufy-robovac).
+2. Install [ADB](https://stackoverflow.com/questions/17901692/set-up-adb-on-mac-os-x) (this requires HomeBrew on macOS).
+3. Install [EufyHome 2.3.2](https://www.apkmirror.com/apk/anker/eufyhome/eufyhome-2-3-2-release/eufyhome-2-3-2-android-apk-download/) in the emulator (double-click the app and it should auto-install).
+4. Follow the [instructions to log the data](https://github.com/joshstrange/eufy-robovac).
 
+#### Method 2: Using eufy-clean-local-key-grabber Repository
+
+For a more straightforward approach, you can also use the [`eufy-clean-local-key-grabber`](https://github.com/Rjevski/eufy-clean-local-key-grabber/tree/master) repository.
+
+**Usage/TL;DR:**
+
+In a somewhat recent Python 3 environment (Python 3.9 was used for development), execute the following commands:
+
+```bash
+pip install -r requirements.txt
+python -m eufy_local_id_grabber "<EUFY ACCOUNT EMAIL>" "<EUFY ACCOUNT PASSWORD>"
+```
+
+You will receive the following output:
+
+```
+Home: <home ID>
+Device: RoboVac, device ID <device ID>, local key <local key>
+```
+
+This will list all the devices in all the "homes" on your account. Note that it's unclear whether you can have more than one "home" in Eufy.
+
+---
+
+You can include this updated section in your README by following the steps outlined in my previous answer to create a pull request.
 ### Thank You
 
 * [mitchellrj](https://github.com/mitchellrj) - Did most of the legwork in figuring out how to talk to the Eufy
