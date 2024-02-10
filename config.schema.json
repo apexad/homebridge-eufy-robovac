@@ -41,6 +41,16 @@
           {"title": "Fan", "enum": ["fan"]}
         ]
       },
+      "hideFindButton": {
+        "title": "Find My Robot",
+        "type": "boolean",
+        "oneOf": [
+          {"title": "Enabled", "enum": ["false"]},
+          {"title": "Disabled", "enum": ["true"]}
+        ],
+        "required": true,
+        "default": "Disabled"
+      },
       "debugLog": {
         "title": "Enable Debug Logging",
         "type": "boolean",
