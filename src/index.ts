@@ -33,8 +33,6 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
 
   private readonly vacuumService: Service;
   private readonly informationService: Service;
-  private readonly findRobotService: Service | undefined;
-  private readonly hideFindButton: boolean;
   private roboVac!: RoboVac;
   private readonly config: { deviceId: any; localKey: any; ip: any; };
   private readonly debugLog: boolean;
@@ -43,7 +41,6 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
     this.name = config.name || 'Eufy RoboVac';
-    this.hideFindButton = config.hideFindButton;
 
     this.debugLog = config.debugLog;
     this.config = {
@@ -58,17 +55,6 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
       .on(CharacteristicEventTypes.GET, this.getCleanState.bind(this))
       .on(CharacteristicEventTypes.SET, this.setCleanState.bind(this));
     this.services.push(this.vacuumService);
-
-    if (!this.hideFindButton) {
-      this.findRobotService = new hap.Service.Switch(`Find ${this.name}`, 'find');
-
-      this.findRobotService
-        .getCharacteristic(hap.Characteristic.On)
-        .on(CharacteristicEventTypes.GET, this.getFindRobot.bind(this))
-        .on(CharacteristicEventTypes.SET, this.setFindRobot.bind(this));
-
-      this.services.push(this.findRobotService);
-    }
 
     this.informationService = new hap.Service.AccessoryInformation()
       .setCharacteristic(hap.Characteristic.Manufacturer, 'Eufy')
