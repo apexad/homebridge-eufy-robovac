@@ -1,43 +1,51 @@
 {
   "pluginAlias": "Eufy RoboVac",
   "pluginType": "accessory",
-  "headerDisplay": "For information on how to obtain deviceId and localKey, go [here](https://github.com/joshstrange/eufy-robovac#readme).",
+  "headerDisplay": "You must have your eufy RoboVac's device ID & local key to configure this plugin. For information about getting your eufy RoboVac's device ID & local key, go [here](https://github.com/joshstrange/eufy-robovac#readme).",
   "singular": false,
   "schema": {
     "type": "object",
     "properties": {
       "name": {
-        "title": "Name",
+        "title": "eufy RoboVac Name",
         "type": "string",
-        "default": "Vacuum Cleaner",
-        "required": false
+        "required": true,
+        "default": "eufy RoboVac",
+        "description": "Enter a name for your eufy RoboVac device."
       },
       "ip": {
-        "title": "IP address",
-        "type": "string",
-        "default": "",
-        "required": false
+        "title": "eufy RoboVac IP Address",
+        "type": "ipv4",
+        "required": true,
+        "description": "Enter the IP Address assigned to your eufy RoboVac device." 
       },
-      "deviceId": {
-        "title": "Device ID",
+      "deviceid": {
+        "title": "eufy RoboVac device ID",
         "type": "string",
-        "required": true
+        "required": true,
+        "description": "Enter the device ID of your eufy RoboVac device."
       },
-      "localKey": {
-        "title": "Local Key",
+      "localkey": {
+        "title": "eufy RoboVac local key",
         "type": "string",
-        "required": true
+        "required": true,
+        "description": "Enter the local key of your eufy RoboVac device."
       },
       "useSwitchService": {
-        "title": "Use Switch for Vacuum (Default is Fan)",
-        "type": "boolean",
-        "required": false,
-        "default": false
+        "title": "eufy RoboVac Accessory Type",
+        "type": "string",
+        "required": true,
+        "default": "switch",
+        "oneOf": [
+          {"title": "Switch", "enum": ["switch"]},
+          {"title": "Fan", "enum": ["fan"]}
+        ]
       },
       "debugLog": {
-        "title": "Enable Debug Log",
+        "title": "Enable Debug Logging",
         "type": "boolean",
         "required": false,
+        "description": "This should only be enabled for troubleshooting purposes.",
         "default": false
       }
     }
