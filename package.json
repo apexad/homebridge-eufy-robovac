@@ -1,10 +1,11 @@
 {
-  "name": "homebridge-eufy-robovac",
-  "version": "2.1.2",
+  "name": "@hov3rcraft/homebridge-eufy-robovac",
+  "version": "3.0.0",
   "description": "Homebridge support for Eufy RoboVac",
   "main": "dist/index.js",
   "dependencies": {
-    "eufy-robovac": "^1.4.1"
+    "eufy-robovac": "^1.4.1",
+    "tsc": "^2.0.4"
   },
   "devDependencies": {
     "@types/node": "10.17.19",
