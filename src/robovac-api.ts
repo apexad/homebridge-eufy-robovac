@@ -94,20 +94,23 @@ export function formatStatus(statusResponse: StatusResponse): string {
 
 export class RoboVac {
     api: any;
-    lastStatusResponse: StatusResponse | null = null;
+    directConnect: boolean;
+    lastStatus: StatusResponse;
     lastStatusUpdate: Date = new Date(0);
     cachingDuration: number;
     ongoingStatusUpdate: Promise<StatusResponse> | null = null;
     debugLog: boolean;
 
-    constructor(config: { deviceId: string, localKey: string, ip: string }, cachingDuration: number, debugLog: boolean = false) {
+    constructor(config: { deviceId: string, localKey: string, deviceIp: string }, cachingDuration: number, debugLog: boolean = false) {
         this.cachingDuration = cachingDuration;
         this.debugLog = debugLog;
+
+        this.directConnect = (config.deviceIp != null && config.deviceIp != "");
 
         this.api = new TuyAPI({
             id: config.deviceId,
             key: config.localKey,
-            ip: config.ip,
+            ip: this.directConnect ? config.deviceIp : null,
             version: '3.3',
             issueRefreshOnConnect: true
         });
@@ -150,59 +153,94 @@ export class RoboVac {
                 }
                 console.log("Received data from device:", "\n" + logMessage);
             }
+
+            if (data.dps) {
+                Object.assign(this.lastStatus, data);
+                this.lastStatusUpdate = new Date();
+            }
         });
+
+        // init with default values
+        this.lastStatus = {
+            devId: config.deviceId,
+            dps: {
+                "1": false,
+                "2": false,
+                "3": Direction.FORWARD,
+                "5": WorkMode.NO_SWEEP,
+                "15": WorkStatus.CHARGING,
+                "101": false,
+                "102": CleanSpeed.NO_SUCTION,
+                "103": false,
+                "104": 0,
+                "106": "",
+            }
+        }
+
+        this.connect();
+    }
+
+    connect() {
+        if (this.directConnect) {
+            // connect directly to the ip specified in config
+            this.api.connect();
+        } else {
+            // Find device on network
+            this.api.find().then(() => {
+                // Connect to device
+                this.api.connect();
+            })
+        }
     }
 
     getStatusesCached(): Promise<StatusResponse> {
         if (Math.abs(new Date().getTime() - this.lastStatusUpdate.getTime()) > this.cachingDuration) {
             return this.getStatuses();
         } else {
-            if (this.debugLog) {
-                console.log("Status request within max status update age");
-            }
-            return Promise.resolve(this.lastStatusResponse as StatusResponse);
+            if (this.debugLog) console.log("Status request within max status update age");
+            return Promise.resolve(this.lastStatus as StatusResponse);
         }
     }
 
     getStatuses(): Promise<StatusResponse> {
         if (this.ongoingStatusUpdate == null) {
             this.ongoingStatusUpdate = new Promise<StatusResponse>((resolve, reject) => {
-                if (this.debugLog) {
-                    console.log("Fetching status update...");
+                if (this.debugLog) console.log("Fetching status update...");
+                
+                if (!this.api.isConnected()) {
+                    this.connect();
                 }
                 this.api.get({ schema: true }).then((schema: any) => {
-                    this.lastStatusResponse = schema;
+                    this.lastStatus = schema;
                     this.lastStatusUpdate = new Date();
-                    this.api.disconnect();
                     this.ongoingStatusUpdate = null;
-                    resolve(this.lastStatusResponse as StatusResponse);
+                    resolve(this.lastStatus as StatusResponse);
                 }).catch((e: Error) => {
-                    if (this.debugLog) {
-                        console.log("An error occurred (during GET)!", e)
-                    }
+                    if (this.debugLog) console.log("An error occurred (during GET)!", e);
+                    this.lastStatusUpdate = new Date();
+                    this.ongoingStatusUpdate = null;
                     reject(e);
                 });
             });
             return this.ongoingStatusUpdate;
         }
-        else if (this.debugLog) {
-            console.log("Duplicate status request detected");
+        else {
+            if (this.debugLog) console.log("Duplicate status request detected");
         }
         return this.ongoingStatusUpdate as Promise<StatusResponse>;
     }
 
     set(dps: string, newValue: any): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            if (this.debugLog) {
-                console.log("Setting new value...");
+            if (this.debugLog) console.log("Setting new value...");
+
+            if (!this.api.isConnected()) {
+                this.connect();
             }
             this.api.set({ dps: dps, set: newValue }).then(() => {
-                this.api.disconnect();
                 resolve();
             }).catch((error: Error) => {
-                if (this.debugLog) {
-                    console.log("An error occurred (during SET)!")
-                }
+                if (this.debugLog)console.log("An error occurred (during SET)!");
                 reject(error);
             });
         });
@@ -289,76 +327,64 @@ export class RoboVac {
     }
 
     getPlayPauseCached(): boolean | undefined {
-        return this.lastStatusResponse?.dps[StatusDps.PLAY_PAUSE];
+        return this.lastStatus.dps[StatusDps.PLAY_PAUSE];
     }
 
     getDirectionCached(): Direction | undefined {
-        return <Direction | undefined>this.lastStatusResponse?.dps[StatusDps.DIRECTION];
+        return <Direction | undefined>this.lastStatus.dps[StatusDps.DIRECTION];
     }
 
     getWorkStatusCached(): WorkStatus | undefined {
-        return <WorkStatus | undefined>this.lastStatusResponse?.dps[StatusDps.WORK_STATUS];
+        return <WorkStatus | undefined>this.lastStatus.dps[StatusDps.WORK_STATUS];
     }
 
     getGoHomeCached(): boolean | undefined {
-        return <boolean | undefined>this.lastStatusResponse?.dps[StatusDps.GO_HOME];
+        return <boolean | undefined>this.lastStatus.dps[StatusDps.GO_HOME];
     }
 
     getCleanSpeedCached(): CleanSpeed | undefined {
-        return <CleanSpeed | undefined>this.lastStatusResponse?.dps[StatusDps.CLEAN_SPEED];
+        return <CleanSpeed | undefined>this.lastStatus.dps[StatusDps.CLEAN_SPEED];
     }
 
     getFindRobotCached(): boolean | undefined {
-        return <boolean | undefined>this.lastStatusResponse?.dps[StatusDps.FIND_ROBOT];
+        return <boolean | undefined>this.lastStatus.dps[StatusDps.FIND_ROBOT];
     }
 
     getBatteryLevelCached(): number | undefined {
-        return <number | undefined>this.lastStatusResponse?.dps[StatusDps.BATTERY_LEVEL];
+        return <number | undefined>this.lastStatus.dps[StatusDps.BATTERY_LEVEL];
     }
 
     getErrorCodeCached(): string | undefined {
-        return <string | undefined>this.lastStatusResponse?.dps[StatusDps.ERROR_CODE];
+        return <string | undefined>this.lastStatus.dps[StatusDps.ERROR_CODE];
     }
 
     setPlayPause(newValue: boolean): Promise<void> {
-        if (this.debugLog) {
-            console.log("Setting PlayPause to", newValue, "...");
-        }
+        if (this.debugLog) console.log("Setting PlayPause to", newValue, "...");
         return this.set(StatusDps.PLAY_PAUSE, newValue);
     }
 
     setDirection(newValue: string): Promise<void> {
-        if (this.debugLog) {
-            console.log("Setting Direction to", newValue, "...");
-        }
+        if (this.debugLog) console.log("Setting Direction to", newValue, "...");
         return this.set(StatusDps.DIRECTION, newValue);
     }
 
     setWorkMode(newValue: string): Promise<void> {
-        if (this.debugLog) {
-            console.log("Setting WorkMode to", newValue, "...");
-        }
+        if (this.debugLog) console.log("Setting WorkMode to", newValue, "...");
         return this.set(StatusDps.WORK_MODE, newValue);
     }
 
     setGoHome(newValue: boolean): Promise<void> {
-        if (this.debugLog) {
-            console.log("Setting GoHome to", newValue, "...");
-        }
+        if (this.debugLog) console.log("Setting GoHome to", newValue, "...");
         return this.set(StatusDps.GO_HOME, newValue);
     }
 
     setCleanSpeed(newValue: string): Promise<void> {
-        if (this.debugLog) {
-            console.log("Setting CleanSpeed to", newValue, "...");
-        }
+        if (this.debugLog) console.log("Setting CleanSpeed to", newValue, "...");
         return this.set(StatusDps.CLEAN_SPEED, newValue);
     }
 
     setFindRobot(newValue: boolean): Promise<void> {
-        if (this.debugLog) {
-            console.log("Setting FindRobot to", newValue, "...");
-        }
+        if (this.debugLog) console.log("Setting FindRobot to", newValue, "...");
         return this.set(StatusDps.FIND_ROBOT, newValue);
     }
 }

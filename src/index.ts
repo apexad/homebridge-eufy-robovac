@@ -36,7 +36,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   private readonly findRobotService: Service | undefined;
   private readonly errorSensorService: Service | undefined;
   private roboVac!: RoboVac;
-  private readonly config: { deviceId: any; localKey: any; ip: string };
+  private readonly config: { deviceId: any; localKey: any; deviceIp: string };
   private readonly hideFindButton: boolean;
   private readonly hideErrorSensor: boolean;
   private readonly debugLog: boolean;
@@ -55,11 +55,11 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     this.config = {
       deviceId: config.deviceId,
       localKey: config.localKey,
-      ip: config.ipAddress
+      ip: config.deviceIp
     };
     this.services = [];
 
-    log.info(`Eufy Robovac starting - running code from 21:41.`);
+    log.info(`Eufy Robovac starting`);
 
     this.vacuumService = config.useSwitchService ? new hap.Service.Switch(this.name, 'vacuum') : new hap.Service.Fan(this.name, 'vacuum');
 

@@ -66,3 +66,9 @@ dist
 .DS_Store
 .AppleDouble
 .LSOverride
+
+### VisualStudioCode ###
+.vscode/*
+
+# playground
+test.ts

@@ -22,6 +22,12 @@
         "type": "string",
         "required": true
       },
+      "deviceIp": {
+        "title": "Device IP",
+        "type": "string",
+        "required": false,
+        "default": null
+      },
       "hideFindButton": {
         "title": "Hide Find Button",
         "type": "boolean",
