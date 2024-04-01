@@ -19,7 +19,7 @@ let hap: HAP;
 
 export = (api: API) => {
   hap = api.hap;
-  api.registerAccessory('homebridge-eufy-robovac', 'Eufy RoboVac', EufyRoboVacAccessory);
+  api.registerAccessory('@hov3rcraft/homebridge-eufy-robovac', 'Eufy RoboVac', EufyRoboVacAccessory);
 };
 
 function sleep(ms: number) {
