@@ -55,7 +55,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     this.config = {
       deviceId: config.deviceId,
       localKey: config.localKey,
-      ip: config.deviceIp
+      deviceIp: config.deviceIp
     };
     this.services = [];
 
