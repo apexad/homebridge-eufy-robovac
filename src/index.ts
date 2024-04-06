@@ -14,6 +14,7 @@ import {
 } from 'homebridge';
 import { throws } from 'assert';
 import { ChangeReason, CharacteristicWarningType } from 'hap-nodejs';
+import { ConsoleLogger, Logger } from './consoleLogger';
 
 let hap: HAP;
 
@@ -27,7 +28,7 @@ function sleep(ms: number) {
 }
 
 class EufyRoboVacAccessory implements AccessoryPlugin {
-  private readonly log: Logging;
+  private readonly log: Logger;
   private readonly name: string;
 
   private readonly vacuumService: Service;
@@ -39,19 +40,17 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   private readonly config: { deviceId: any; localKey: any; deviceIp: string };
   private readonly hideFindButton: boolean;
   private readonly hideErrorSensor: boolean;
-  private readonly debugLog: boolean;
   private readonly callbackTimeout = 3000;
   private readonly finalTimeout = 10000;
   private readonly cachingDuration: number = 15000;
   services: Service[];
 
   constructor(log: Logging, config: AccessoryConfig, api: API) {
-    this.log = log;
+    this.log = config.debugLog ? new ConsoleLogger("homebridge-eufy-robovac:", 0) : log;
     this.name = config.name || 'Eufy RoboVac';
     this.hideFindButton = config.hideFindButton;
     this.hideErrorSensor = config.hideErrorSensor;
 
-    this.debugLog = config.debugLog;
     this.config = {
       deviceId: config.deviceId,
       localKey: config.localKey,
@@ -112,7 +111,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     }
     */
 
-    this.roboVac = new RoboVac(this.config, this.cachingDuration, this.debugLog);
+    this.roboVac = new RoboVac(this.config, this.cachingDuration, this.log);
 
     log.info(`${this.name} finished initializing!`);
   }
@@ -261,7 +260,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   }
 
   identify(): void {
-    this.log('Identify!');
+    this.log.info('Identify!');
   }
 
   getServices(): Service[] {

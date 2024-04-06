@@ -1,4 +1,5 @@
 import { rejects } from "assert";
+import { ConsoleLogger, Logger } from "./consoleLogger"
 
 const TuyAPI = require('tuyapi');
 
@@ -99,11 +100,17 @@ export class RoboVac {
     lastStatusUpdate: Date = new Date(0);
     cachingDuration: number;
     ongoingStatusUpdate: Promise<StatusResponse> | null = null;
-    debugLog: boolean;
+    log: Logger;
+    consoleDebugLog: boolean;
 
-    constructor(config: { deviceId: string, localKey: string, deviceIp: string }, cachingDuration: number, debugLog: boolean = false) {
+    constructor(config: { deviceId: string, localKey: string, deviceIp: string }, cachingDuration: number, log:Logger = new ConsoleLogger()) {
         this.cachingDuration = cachingDuration;
-        this.debugLog = debugLog;
+        this.log = log;
+        if (log instanceof ConsoleLogger) {
+            this.consoleDebugLog = ((log as ConsoleLogger).logLevel <= 1);
+        } else {
+            this.consoleDebugLog = false;
+        }
 
         this.directConnect = (config.deviceIp != null && config.deviceIp != "");
 
@@ -117,41 +124,35 @@ export class RoboVac {
 
         // Add event listeners
         this.api.on('connected', () => {
-            if (debugLog) {
-                console.log('Connected to device!');
-            }
+            log.info('Connected to device!');
         });
 
         this.api.on('disconnected', () => {
-            if (debugLog) {
-                console.log('Disconnected from device.');
-            }
+            log.info('Disconnected from device.');
         });
 
         this.api.on('error', (error: any) => {
-            if (debugLog) {
-                console.log('Error!', error);
-            }
+            log.error('Error!', error);
             this.ongoingStatusUpdate = null;
             this.lastStatusUpdate = new Date(0);
             this.api.disconnect();
         });
 
         this.api.on('dp-refresh', (data: any) => {
-            if (debugLog) {
-                console.log('DP_REFRESH data from device: ', data);
-            }
+            log.debug('DP_REFRESH data from device: ', data);
         });
 
         this.api.on('data', (data: any) => {
-            if (debugLog) {
+            if (this.consoleDebugLog) {
                 let logMessage: any;
                 try {
                     logMessage = formatStatus(data);
                 } catch (e) {
                     logMessage = data;
                 }
-                console.log("Received data from device:", "\n" + logMessage);
+                this.log.debug("Received data from device:", "\n" + logMessage);
+            } else {
+                this.log.debug("Received data from device:", data)
             }
 
             if (data.dps) {
@@ -184,6 +185,7 @@ export class RoboVac {
         if (this.directConnect) {
             // connect directly to the ip specified in config
             this.api.connect();
+            this.log.info("Connected to RoboVac at ", this.api.device.ip);
         } else {
             // Find device on network
             this.api.find().then(() => {
@@ -193,11 +195,17 @@ export class RoboVac {
         }
     }
 
+    disconnect() {
+        if (this.api.isConnected()) {
+            this.api.disconnect();
+        }
+    }
+
     getStatusesCached(): Promise<StatusResponse> {
         if (Math.abs(new Date().getTime() - this.lastStatusUpdate.getTime()) > this.cachingDuration) {
             return this.getStatuses();
         } else {
-            if (this.debugLog) console.log("Status request within max status update age");
+            this.log.debug("Status request within max status update age");
             return Promise.resolve(this.lastStatus as StatusResponse);
         }
     }
@@ -205,7 +213,7 @@ export class RoboVac {
     getStatuses(): Promise<StatusResponse> {
         if (this.ongoingStatusUpdate == null) {
             this.ongoingStatusUpdate = new Promise<StatusResponse>((resolve, reject) => {
-                if (this.debugLog) console.log("Fetching status update...");
+                this.log.info("Fetching status update...");
                 
                 if (!this.api.isConnected()) {
                     this.connect();
@@ -216,7 +224,7 @@ export class RoboVac {
                     this.ongoingStatusUpdate = null;
                     resolve(this.lastStatus as StatusResponse);
                 }).catch((e: Error) => {
-                    if (this.debugLog) console.log("An error occurred (during GET)!", e);
+                    this.log.error("An error occurred (during GET)!", e);
                     this.lastStatusUpdate = new Date();
                     this.ongoingStatusUpdate = null;
                     reject(e);
@@ -225,14 +233,14 @@ export class RoboVac {
             return this.ongoingStatusUpdate;
         }
         else {
-            if (this.debugLog) console.log("Duplicate status request detected");
+            this.log.debug("Duplicate status request detected");
         }
         return this.ongoingStatusUpdate as Promise<StatusResponse>;
     }
 
     set(dps: string, newValue: any): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            if (this.debugLog) console.log("Setting new value...");
+            this.log.debug("Setting new value...");
 
             if (!this.api.isConnected()) {
                 this.connect();
@@ -240,7 +248,7 @@ export class RoboVac {
             this.api.set({ dps: dps, set: newValue }).then(() => {
                 resolve();
             }).catch((error: Error) => {
-                if (this.debugLog)console.log("An error occurred (during SET)!");
+                this.log.error("An error occurred (during SET)!");
                 reject(error);
             });
         });
@@ -359,32 +367,32 @@ export class RoboVac {
     }
 
     setPlayPause(newValue: boolean): Promise<void> {
-        if (this.debugLog) console.log("Setting PlayPause to", newValue, "...");
+        this.log.info("Setting PlayPause to", newValue, "...");
         return this.set(StatusDps.PLAY_PAUSE, newValue);
     }
 
     setDirection(newValue: string): Promise<void> {
-        if (this.debugLog) console.log("Setting Direction to", newValue, "...");
+        this.log.info("Setting Direction to", newValue, "...");
         return this.set(StatusDps.DIRECTION, newValue);
     }
 
     setWorkMode(newValue: string): Promise<void> {
-        if (this.debugLog) console.log("Setting WorkMode to", newValue, "...");
+        this.log.info("Setting WorkMode to", newValue, "...");
         return this.set(StatusDps.WORK_MODE, newValue);
     }
 
     setGoHome(newValue: boolean): Promise<void> {
-        if (this.debugLog) console.log("Setting GoHome to", newValue, "...");
+        this.log.info("Setting GoHome to", newValue, "...");
         return this.set(StatusDps.GO_HOME, newValue);
     }
 
     setCleanSpeed(newValue: string): Promise<void> {
-        if (this.debugLog) console.log("Setting CleanSpeed to", newValue, "...");
+        this.log.info("Setting CleanSpeed to", newValue, "...");
         return this.set(StatusDps.CLEAN_SPEED, newValue);
     }
 
     setFindRobot(newValue: boolean): Promise<void> {
-        if (this.debugLog) console.log("Setting FindRobot to", newValue, "...");
+        this.log.info("Setting FindRobot to", newValue, "...");
         return this.set(StatusDps.FIND_ROBOT, newValue);
     }
 }
