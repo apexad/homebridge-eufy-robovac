@@ -1,33 +1,13 @@
 {
+  "displayName": "Eufy Robovac",
   "name": "@hov3rcraft/homebridge-eufy-robovac",
   "version": "3.2.0",
   "description": "Homebridge support for Eufy RoboVac",
-  "main": "dist/index.js",
-  "dependencies": {
-    "eufy-robovac": "^1.4.1"
-  },
-  "devDependencies": {
-    "@types/node": "20.12.2",
-    "homebridge": "^1.7.0",
-    "rimraf": "^3.0.2",
-    "typescript": "^5.4.3"
-  },
-  "scripts": {
-    "build": "rimraf ./dist && tsc",
-    "prepublishOnly": "npm run build"
-  },
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hov3rcraft/homebridge-eufy-robovac.git"
   },
-  "keywords": [
-    "eufy",
-    "robovac",
-    "homebridge",
-    "homebridge-plugin"
-  ],
-  "author": "Josh Strange",
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/hov3rcraft/homebridge-eufy-robovac/issues"
   },
@@ -35,5 +15,31 @@
     "node": "^18.17.0 || ^20.9.0",
     "homebridge": "^1.6.0"
   },
-  "homepage": "https://github.com/hov3rcraft/homebridge-eufy-robovac#readme"
+  "main": "dist/index.js",
+  "scripts": {
+    "lint": "eslint src/**/*.ts --max-warnings=0",
+    "watch": "npm run build && npm link && nodemon",
+    "build": "rimraf ./dist && tsc",
+    "prepublishOnly": "npm run lint && npm run build"
+  },
+  "keywords": [
+      "eufy",
+      "robovac",
+      "homebridge",
+      "homebridge-plugin"
+  ],
+  "dependencies": {
+    "tuyapi": "^7.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.5",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
+    "eslint": "^8.57.0",
+    "homebridge": "^1.7.0",
+    "nodemon": "^3.1.0",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.4"
+  }
 }

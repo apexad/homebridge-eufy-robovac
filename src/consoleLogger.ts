@@ -1,5 +1,5 @@
 export interface Logger {
-    prefix: string;
+    prefix?: string;
     info(message: string, ...parameters: any[]): void;
     warn(message: string, ...parameters: any[]): void;
     error(message: string, ...parameters: any[]): void;
@@ -7,16 +7,16 @@ export interface Logger {
 }
 
 export class ConsoleLogger implements Logger {
-    prefix: string;
-    logLevel: number;
+    public readonly prefix?: string;
+    public readonly logLevel: number;
 
-    constructor(prefix:string="", logLevel:number=0) {
+    constructor(logLevel:number=0, prefix?:string) {
         this.prefix = prefix;
         this.logLevel = logLevel;
     }
 
     log(message: string, ...parameters: any[]): void {
-        var fullMessage = (this.prefix == "") ? message : this.prefix + " " + message;
+        var fullMessage = (this.prefix) ? message : this.prefix + " " + message;
         console.log(fullMessage, ...parameters)
     }
 

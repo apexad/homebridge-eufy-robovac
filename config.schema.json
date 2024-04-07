@@ -1,49 +1,59 @@
 {
   "pluginAlias": "Eufy RoboVac",
-  "pluginType": "accessory",
-  "headerDisplay": "For information on how to obtain deviceId and localKey, go [here](https://github.com/hov3rcraft/eufy-robovac#readme).",
-  "singular": false,
+  "pluginType": "platform",
+  "headerDisplay": "Configure your RoboVac devices here.",
+  "singular": true,
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "default": "Vacuum Cleaner",
-        "required": false
-      },
-      "deviceId": {
-        "title": "Device ID",
-        "type": "string",
-        "required": true
-      },
-      "localKey": {
-        "title": "Local Key",
-        "type": "string",
-        "required": true
-      },
-      "deviceIp": {
-        "title": "Device IP",
-        "type": "string",
-        "required": false
-      },
-      "hideFindButton": {
-        "title": "Hide Find Button",
-        "type": "boolean",
-        "required": false,
-        "default": false
-      },
-      "hideErrorSensor": {
-        "title": "Hide Error Sensor",
-        "type": "boolean",
-        "required": false,
-        "default": false
-      },
-      "useSwitchService": {
-        "title": "Use Switch for Vacuum (Default is Fan)",
-        "type": "boolean",
-        "required": false,
-        "default": false
+      "devices": {
+				"description": "For information on how to obtain deviceId and localKey, go [here](https://github.com/hov3rcraft/eufy-robovac#readme).",
+				"title": "Devices",
+				"type": "array",
+				"items": {
+          "type": "object",
+					"properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "default": "Vacuum Cleaner",
+              "required": false
+            },
+            "deviceId": {
+              "title": "Device ID",
+              "type": "string",
+              "required": true
+            },
+            "localKey": {
+              "title": "Local Key",
+              "type": "string",
+              "required": true
+            },
+            "deviceIp": {
+              "title": "Device IP",
+              "type": "string",
+              "required": false
+            },
+            "hideFindButton": {
+              "title": "Hide Find Button",
+              "type": "boolean",
+              "required": false,
+              "default": false
+            },
+            "hideErrorSensor": {
+              "title": "Hide Error Sensor",
+              "type": "boolean",
+              "required": false,
+              "default": false
+            },
+            "useSwitchService": {
+              "title": "Use Switch for Vacuum (Default is Fan)",
+              "type": "boolean",
+              "required": false,
+              "default": false
+            }
+          }
+        }
       },
       "debugLog": {
         "title": "Enable Debug Log",
