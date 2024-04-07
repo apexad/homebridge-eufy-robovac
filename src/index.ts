@@ -1,19 +1,15 @@
-import { RoboVac, WorkStatus } from './robovac-api';
+import { ErrorCode, RoboVac, StatusDps, StatusResponse, WorkStatus } from './robovac-api';
 
 import {
   AccessoryConfig,
   AccessoryPlugin,
   API,
   CharacteristicEventTypes,
-  CharacteristicGetCallback,
-  CharacteristicSetCallback,
   CharacteristicValue,
   HAP,
   Logging,
   Service
 } from 'homebridge';
-import { throws } from 'assert';
-import { ChangeReason, CharacteristicWarningType } from 'hap-nodejs';
 import { ConsoleLogger, Logger } from './consoleLogger';
 
 let hap: HAP;
@@ -32,7 +28,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   private readonly name: string;
 
   private readonly vacuumService: Service;
-  //private readonly informationService: Service;
+  private readonly informationService: Service;
   //private readonly batteryService: Service;
   private readonly findRobotService: Service | undefined;
   private readonly errorSensorService: Service | undefined;
@@ -41,7 +37,6 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
   private readonly hideFindButton: boolean;
   private readonly hideErrorSensor: boolean;
   private readonly callbackTimeout = 3000;
-  private readonly finalTimeout = 10000;
   private readonly cachingDuration: number = 15000;
   services: Service[];
 
@@ -60,20 +55,29 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
 
     log.info(`Eufy Robovac starting`);
 
+    this.roboVac = new RoboVac(this.config, this.updateCharacteristics, this.cachingDuration, this.log);
+
     this.vacuumService = config.useSwitchService ? new hap.Service.Switch(this.name, 'vacuum') : new hap.Service.Fan(this.name, 'vacuum');
 
     this.vacuumService.getCharacteristic(hap.Characteristic.On)
-      .on(CharacteristicEventTypes.GET, this.getCleanState.bind(this))
-      .on(CharacteristicEventTypes.SET, this.setCleanState.bind(this));
+      .on(CharacteristicEventTypes.GET, this.getRunning.bind(this))
+      .on(CharacteristicEventTypes.SET, this.setRunning.bind(this));
 
     this.services.push(this.vacuumService);
 
-    /**
+    // create a new Accessory Information service
     this.informationService = new hap.Service.AccessoryInformation()
-      .setCharacteristic(hap.Characteristic.Manufacturer, 'Eufy')
-      .setCharacteristic(hap.Characteristic.Model, 'RoboVac');
+
+    // create handlers for required characteristics
+    this.informationService.getCharacteristic(hap.Characteristic.Identify).onSet(this.setIdentify.bind(this));
+    this.informationService.setCharacteristic(hap.Characteristic.Manufacturer, 'Eufy');
+    this.informationService.setCharacteristic(hap.Characteristic.Model, 'RoboVac');
+    this.informationService.setCharacteristic(hap.Characteristic.Name, this.name);
+    this.informationService.setCharacteristic(hap.Characteristic.SerialNumber, config.deviceId);
+    this.informationService.setCharacteristic(hap.Characteristic.FirmwareRevision, "unknown");
     this.services.push(this.informationService);
 
+    /**
     this.batteryService = new hap.Service.Battery(this.name + ' Battery');
     this.batteryService.getCharacteristic(hap.Characteristic.BatteryLevel)
       .on(CharacteristicEventTypes.GET, this.getBatteryLevel.bind(this));
@@ -86,8 +90,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
      */
 
 
-    /**
-     * if (!this.hideFindButton) {
+    if (!this.hideFindButton) {
       this.findRobotService = new hap.Service.Switch(`Find ${this.name}`, 'find');
 
       this.findRobotService
@@ -97,9 +100,7 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
 
       this.services.push(this.findRobotService);
     }
-     */
 
-    /**
     if (!this.hideErrorSensor) {
       this.errorSensorService = new hap.Service.MotionSensor(`Error ${this.name}`);
 
@@ -109,67 +110,41 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
 
       this.services.push(this.errorSensorService);
     }
-    */
-
-    this.roboVac = new RoboVac(this.config, this.cachingDuration, this.log);
 
     log.info(`${this.name} finished initializing!`);
   }
 
-  getCleanState(callback: CharacteristicGetCallback) {
-    this.log.debug(`getCleanState for ${this.name}`);
-
-    let callbackTimeoutLapsed = false;
-    let finalTimeoutLapsed = false;
-    this.roboVac.getPlayPause().then((cleanState) => {
-      if (!callbackTimeoutLapsed) {
-        callbackTimeoutLapsed = true;
-        callback(undefined, cleanState);
-      } else if (!finalTimeoutLapsed) {
-        this.vacuumService.updateCharacteristic(hap.Characteristic.On, cleanState);
-      }
-    }).catch((error: Error) => {
-      callbackTimeoutLapsed = true;
-      callback(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    });
-
-    setTimeout(function () {
-      if (!callbackTimeoutLapsed) {
-        callbackTimeoutLapsed = true;
-        callback(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-      }
-    }, this.callbackTimeout);
-
-    setTimeout(function () {
-      finalTimeoutLapsed = true;
-    }, this.finalTimeout);
-
-    let timeoutPromise: Promise<undefined> = new Promise<undefined>((resolve, reject) => {
-      setTimeout(() => { resolve(undefined) }, this.callbackTimeout);
-    });
+  async getRunning(): Promise<CharacteristicValue> {
+    this.log.debug(`getRunning for ${this.name}`);
+    return Promise.race([
+      new Promise<CharacteristicValue>((resolve, reject) => {
+        this.roboVac.getRunning().then((running: boolean) => {
+          resolve(running);
+        }).catch(() => {
+          reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        });
+      }),
+      new Promise<CharacteristicValue>((resolve, reject) => {
+        setTimeout(() => reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)), this.callbackTimeout);
+      }),
+    ]);
   }
 
-  setCleanState(state: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.log.debug(`setCleanState for ${this.name} set to ${state}`);
-
-    let callbackTimeoutLapsed = false;
-    let promise = (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true);
-    promise.then(() => {
-      if (!callbackTimeoutLapsed) {
-        callbackTimeoutLapsed = true;
-        callback();
-      }
-    }).catch((error: Error) => {
-      callbackTimeoutLapsed = true;
-      callback(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    })
-
-    setTimeout(function () {
-      if (!callbackTimeoutLapsed) {
-        callbackTimeoutLapsed = true;
-        callback(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-      }
-    }, this.callbackTimeout);
+  async setRunning(state: CharacteristicValue) {
+    this.log.debug(`setRunning for ${this.name} set to ${state}`);
+    return Promise.race([
+      new Promise<void>((resolve, reject) => {
+        let task = (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true);
+        task.then(() => {
+          resolve();
+        }).catch(() => {
+          reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        });
+      }),
+      new Promise<void>((resolve, reject) => {
+        setTimeout(() => reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)), this.callbackTimeout);
+      }),
+    ]);
   }
 
   /** 
@@ -218,52 +193,84 @@ class EufyRoboVacAccessory implements AccessoryPlugin {
     callback(undefined, hap.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
   }*/
 
-  getFindRobot(callback: CharacteristicGetCallback) {
+  async getFindRobot(): Promise<CharacteristicValue> {
     this.log.debug(`getFindRobot for ${this.name}`);
-
-    this.roboVac.getFindRobot().then((findRobot: boolean) => {
-      this.findRobotService?.updateCharacteristic(hap.Characteristic.On, findRobot);
-    }).catch(() => {
-      this.findRobotService?.getCharacteristic(hap.Characteristic.On).setValue(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-    });
-
-    callback(undefined, false);
+    return Promise.race([
+      new Promise<CharacteristicValue>((resolve, reject) => {
+        this.roboVac.getFindRobot().then((findRobot: boolean) => {
+          resolve(findRobot);
+        }).catch(() => {
+          reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        });
+      }),
+      new Promise<CharacteristicValue>((resolve, reject) => {
+        setTimeout(() => reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)), this.callbackTimeout);
+      }),
+    ]);
   }
 
-  setFindRobot(state: CharacteristicValue, callback: CharacteristicSetCallback) {
+  async setFindRobot(state: CharacteristicValue) {
     this.log.debug(`setFindRobot for ${this.name} set to ${state}`);
-    this.roboVac.setFindRobot(state as boolean).then(() => {
-      let playPauseCached = this.roboVac.getPlayPauseCached();
-      if (playPauseCached) {
-        this.vacuumService.updateCharacteristic(hap.Characteristic.On, playPauseCached);
-      }
-      let getFindRobotCached = this.roboVac.getFindRobotCached();
-      if (getFindRobotCached) {
-        this.findRobotService?.updateCharacteristic(hap.Characteristic.On, getFindRobotCached);
-      }
-    }).catch(() => {
-      this.findRobotService?.getCharacteristic(hap.Characteristic.On).setValue(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-    });
-    callback();
+    return Promise.race([
+      new Promise<void>((resolve, reject) => {
+        this.roboVac.setFindRobot(state as boolean).then(() => {
+          resolve();
+        }).catch(() => {
+          reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        });
+      }),
+      new Promise<void>((resolve, reject) => {
+        setTimeout(() => reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)), this.callbackTimeout);
+      }),
+    ]);
   }
 
-  getErrorStatus(callback: CharacteristicGetCallback) {
-    this.log.debug(`getErrorCode for ${this.name}`);
-
-    this.roboVac.getErrorCode().then((errorCode: string) => {
-      this.errorSensorService?.updateCharacteristic(hap.Characteristic.MotionDetected, (errorCode === 'no_error') ? false : true);
-    }).catch(() => {
-      this.errorSensorService?.getCharacteristic(hap.Characteristic.MotionDetected).setValue(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-    });
-
-    callback(undefined, false);
+  async getErrorStatus(): Promise<CharacteristicValue> {
+    this.log.debug(`getErrorStatus for ${this.name}`);
+    return Promise.race([
+      new Promise<CharacteristicValue>((resolve, reject) => {
+        this.roboVac.getErrorCode().then((errorCode: string) => {
+          resolve(errorCode !== ErrorCode.NO_ERROR);
+        }).catch(() => {
+          reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        });
+      }),
+      new Promise<CharacteristicValue>((resolve, reject) => {
+        setTimeout(() => reject(new hap.HapStatusError(hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)), this.callbackTimeout);
+      }),
+    ]);
   }
 
-  identify(): void {
-    this.log.info('Identify!');
+  /**
+   * Handle requests to set the "Identify" characteristic
+   */
+  setIdentify(value: any) {
+    this.log.info('Triggered SET Identify:', value);
   }
 
   getServices(): Service[] {
     return this.services;
+  }
+
+  updateCharacteristics(statusResponse: StatusResponse) {
+    this.log.debug(`updateCharacteristics for ${this.name}`);
+    var counter = 0;
+    if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
+      this.log.debug(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
+      this.vacuumService.updateCharacteristic(hap.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
+      counter++;
+    }
+    if (this.findRobotService && statusResponse.dps[StatusDps.FIND_ROBOT] !== undefined) {
+      this.log.debug(`updating FIND ROBOT for ${this.name} to ${statusResponse.dps[StatusDps.FIND_ROBOT]}`);
+      this.findRobotService?.updateCharacteristic(hap.Characteristic.On, statusResponse.dps[StatusDps.FIND_ROBOT]);
+      counter++;
+    }
+    if (this.errorSensorService && statusResponse.dps[StatusDps.ERROR_CODE] !== undefined) {
+      this.log.debug(`updating ERROR STATUS for ${this.name} to ${statusResponse.dps[StatusDps.ERROR_CODE]}`);
+      this.errorSensorService?.updateCharacteristic(hap.Characteristic.MotionDetected, statusResponse.dps[StatusDps.ERROR_CODE] !== ErrorCode.NO_ERROR);
+      counter++;
+    }
+
+    this.log.info(`New data from ${this.name} received - updated ${counter} characteristics.`)
   }
 }

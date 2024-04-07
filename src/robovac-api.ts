@@ -1,7 +1,106 @@
-import { rejects } from "assert";
 import { ConsoleLogger, Logger } from "./consoleLogger"
 
 const TuyAPI = require('tuyapi');
+
+export enum StatusDps {
+    DEFAULT = '1',
+    RUNNING = '2',
+    DIRECTION = '3',
+    WORK_MODE = '5',
+    WORK_STATUS = '15',
+    GO_HOME = '101',
+    CLEAN_SPEED = '102',
+    FIND_ROBOT = '103',
+    BATTERY_LEVEL = '104',
+    ERROR_CODE = '106'
+}
+
+export const statusDpsFriendlyNames = new Map<string, string>([
+    [StatusDps.DEFAULT, "Default Property (ignore)"],
+    [StatusDps.RUNNING, "Running"],
+    [StatusDps.DIRECTION, "Direction"],
+    [StatusDps.WORK_MODE, "Work Mode"],
+    [StatusDps.WORK_STATUS, "Work Status"],
+    [StatusDps.GO_HOME, "Go Home"],
+    [StatusDps.CLEAN_SPEED, "Clean Speed"],
+    [StatusDps.FIND_ROBOT, "Find Robot"],
+    [StatusDps.BATTERY_LEVEL, "Battery Level"],
+    [StatusDps.ERROR_CODE, "Error Code"]
+]  
+);
+
+export interface StatusResponse {
+    devId: string,
+    dps: {
+        [StatusDps.DEFAULT]?: boolean,
+        [StatusDps.RUNNING]?: boolean,
+        [StatusDps.DIRECTION]?: string,
+        [StatusDps.WORK_MODE]?: string,
+        [StatusDps.WORK_STATUS]?: string,
+        [StatusDps.GO_HOME]?: boolean,
+        [StatusDps.CLEAN_SPEED]?: string,
+        [StatusDps.FIND_ROBOT]?: boolean,
+        [StatusDps.BATTERY_LEVEL]?: number,
+        [StatusDps.ERROR_CODE]?: string,
+    }
+}
+
+export interface RobovacStatus {
+    devId: string,
+    dps: {
+        [StatusDps.DEFAULT]: boolean,
+        [StatusDps.RUNNING]: boolean,
+        [StatusDps.DIRECTION]: string,
+        [StatusDps.WORK_MODE]: string,
+        [StatusDps.WORK_STATUS]: string,
+        [StatusDps.GO_HOME]: boolean,
+        [StatusDps.CLEAN_SPEED]: string,
+        [StatusDps.FIND_ROBOT]: boolean,
+        [StatusDps.BATTERY_LEVEL]: number,
+        [StatusDps.ERROR_CODE]: string,
+    }
+}
+
+export function formatStatusResponse(statusResponse: StatusResponse): string {
+    var formattedStatus = `-- Status Start --\n`
+    for (var dps of Object.values(StatusDps)) {
+        if (statusResponse.dps.hasOwnProperty(dps)) {
+            formattedStatus += `- ${statusDpsFriendlyNames.get(dps)}: ${(statusResponse.dps as any)[dps]}\n`
+        }   
+    }
+    formattedStatus += `-- Status End --`
+    return formattedStatus;
+}
+
+export enum Direction {
+    FORWARD = 'forward',
+    BACKWARD = 'backward',
+    LEFT = 'left',
+    RIGHT = 'right'
+}
+
+export enum WorkMode {
+    AUTO = 'auto',
+    SMALL_ROOM = 'SmallRoom',
+    SPOT = 'Spot',
+    EDGE = 'Edge',
+    NO_SWEEP = 'Nosweep'
+}
+
+export enum WorkStatus {
+    // Cleaning
+    RUNNING = 'Running',
+    // Not in the dock, paused
+    STAND_BY = 'standby',
+    // Not in the dock - goes into this state after being paused for a while
+    SLEEPING = 'Sleeping',
+    // In the dock, charging
+    CHARGING = 'Charging',
+    // In the dock, full charged
+    COMPLETED = 'completed',
+    // Going home because battery is depleted or home was pressed
+    RECHARGE_NEEDED = 'Recharge'
+}
 
 export enum CleanSpeed {
     STANDARD = 'Standard',
@@ -22,88 +121,18 @@ export enum ErrorCode {
     R_BRUSH_STUCK = 'R_brush_stuck'
 }
 
-export enum WorkStatus {
-    // Cleaning
-    RUNNING = 'Running',
-    // Not in the dock, paused
-    STAND_BY = 'standby',
-    // Not in the dock - goes into this state after being paused for a while
-    SLEEPING = 'Sleeping',
-    // In the dock, charging
-    CHARGING = 'Charging',
-    // In the dock, full charged
-    COMPLETED = 'completed',
-    // Going home because battery is depleted or home was pressed
-    RECHARGE_NEEDED = 'Recharge'
-}
-
-export enum Direction {
-    FORWARD = 'forward',
-    BACKWARD = 'backward',
-    LEFT = 'left',
-    RIGHT = 'right'
-}
-
-export enum WorkMode {
-    AUTO = 'auto',
-    SMALL_ROOM = 'SmallRoom',
-    SPOT = 'Spot',
-    EDGE = 'Edge',
-    NO_SWEEP = 'Nosweep'
-}
-
-export enum StatusDps {
-    PLAY_PAUSE = '2',
-    DIRECTION = '3',
-    WORK_MODE = '5',
-    WORK_STATUS = '15',
-    GO_HOME = '101',
-    CLEAN_SPEED = '102',
-    FIND_ROBOT = '103',
-    BATTERY_LEVEL = '104',
-    ERROR_CODE = '106'
-}
-
-export interface StatusResponse {
-    devId: string,
-    dps: {
-        "1": boolean,
-        "2": boolean,
-        "3": string,
-        "5": string,
-        "15": string,
-        "101": boolean,
-        "102": string,
-        "103": boolean,
-        "104": number,
-        "106": string,
-    }
-}
-
-export function formatStatus(statusResponse: StatusResponse): string {
-    return `    -- Status Start --
-    - Play/Pause: ${(statusResponse.dps as any)[StatusDps.PLAY_PAUSE]}
-    - Direction: ${(statusResponse.dps as any)[StatusDps.DIRECTION]}
-    - Work Mode: ${(statusResponse.dps as any)[StatusDps.WORK_MODE]}
-    - Go Home: ${(statusResponse.dps as any)[StatusDps.GO_HOME]}
-    - Clean Speed: ${(statusResponse.dps as any)[StatusDps.CLEAN_SPEED]}
-    - Find Robot: ${(statusResponse.dps as any)[StatusDps.FIND_ROBOT]}
-    - Battery Level: ${(statusResponse.dps as any)[StatusDps.BATTERY_LEVEL]}
-    - Error Code: ${(statusResponse.dps as any)[StatusDps.ERROR_CODE]}
-    -- Status End --`;
-}
-
 export class RoboVac {
     api: any;
     directConnect: boolean;
-    lastStatus: StatusResponse;
-    lastStatusUpdate: Date = new Date(0);
+    lastStatus: RobovacStatus;
+    lastStatusUpdate: Date;
+    lastStatusValid: boolean;
     cachingDuration: number;
-    ongoingStatusUpdate: Promise<StatusResponse> | null = null;
+    ongoingStatusUpdate: Promise<RobovacStatus> | null;
     log: Logger;
     consoleDebugLog: boolean;
 
-    constructor(config: { deviceId: string, localKey: string, deviceIp: string }, cachingDuration: number, log:Logger = new ConsoleLogger()) {
+    constructor(config: { deviceId: string, localKey: string, deviceIp: string }, dataReceivedCallback: (statusResponse: StatusResponse) => void, cachingDuration: number, log:Logger = new ConsoleLogger()) {
         this.cachingDuration = cachingDuration;
         this.log = log;
         if (log instanceof ConsoleLogger) {
@@ -133,9 +162,7 @@ export class RoboVac {
 
         this.api.on('error', (error: any) => {
             log.error('Error!', error);
-            this.ongoingStatusUpdate = null;
-            this.lastStatusUpdate = new Date(0);
-            this.api.disconnect();
+            this.disconnect();
         });
 
         this.api.on('dp-refresh', (data: any) => {
@@ -144,13 +171,11 @@ export class RoboVac {
 
         this.api.on('data', (data: any) => {
             if (this.consoleDebugLog) {
-                let logMessage: any;
                 try {
-                    logMessage = formatStatus(data);
+                    this.log.debug("Received data from device:", "\n" + formatStatusResponse(data));
                 } catch (e) {
-                    logMessage = data;
+                    this.log.debug("Received data from device:", data)
                 }
-                this.log.debug("Received data from device:", "\n" + logMessage);
             } else {
                 this.log.debug("Received data from device:", data)
             }
@@ -158,241 +183,218 @@ export class RoboVac {
             if (data.dps) {
                 Object.assign(this.lastStatus, data);
                 this.lastStatusUpdate = new Date();
+                dataReceivedCallback(data);
             }
         });
 
         // init with default values
         this.lastStatus = {
-            devId: config.deviceId,
+            devId: "default - invalid",
             dps: {
-                "1": false,
-                "2": false,
-                "3": Direction.FORWARD,
-                "5": WorkMode.NO_SWEEP,
-                "15": WorkStatus.CHARGING,
-                "101": false,
-                "102": CleanSpeed.NO_SUCTION,
-                "103": false,
-                "104": 0,
-                "106": "",
+                [StatusDps.DEFAULT]: false,
+                [StatusDps.RUNNING]: false,
+                [StatusDps.DIRECTION]: Direction.FORWARD,
+                [StatusDps.WORK_MODE]: WorkMode.NO_SWEEP,
+                [StatusDps.WORK_STATUS]: WorkStatus.CHARGING,
+                [StatusDps.GO_HOME]: false,
+                [StatusDps.CLEAN_SPEED]: CleanSpeed.NO_SUCTION,
+                [StatusDps.FIND_ROBOT]: false,
+                [StatusDps.BATTERY_LEVEL]: -1,
+                [StatusDps.ERROR_CODE]: "default - invalid",
             }
         }
+        this.lastStatusUpdate = new Date(0);
+        this.lastStatusValid = false;
+        this.ongoingStatusUpdate = null;
 
         this.connect();
     }
 
-    connect() {
-        if (this.directConnect) {
-            // connect directly to the ip specified in config
-            this.api.connect();
-            this.log.info("Connected to RoboVac at ", this.api.device.ip);
-        } else {
-            // Find device on network
-            this.api.find().then(() => {
-                // Connect to device
-                this.api.connect();
-            })
+    async connect(): Promise<void> {
+        if (!this.directConnect) {
+            // Find device on network if there is no ip specified in config
+            await this.api.find()
         }
+
+        // Connect to device
+        await this.api.connect();
     }
 
-    disconnect() {
+    async disconnect() {
+        this.ongoingStatusUpdate = null;
+        this.lastStatusUpdate = new Date(0);
         if (this.api.isConnected()) {
-            this.api.disconnect();
+            await this.api.disconnect();
         }
     }
 
-    getStatusesCached(): Promise<StatusResponse> {
-        if (Math.abs(new Date().getTime() - this.lastStatusUpdate.getTime()) > this.cachingDuration) {
-            return this.getStatuses();
+    getStatusCached(): RobovacStatus | null {
+        return this.lastStatusValid ? this.lastStatus : null;
+    }
+
+    async getStatus(): Promise<RobovacStatus> {
+        if (!this.lastStatusValid || Math.abs(new Date().getTime() - this.lastStatusUpdate.getTime()) > this.cachingDuration) {
+            return this.getStatusFromDeviceSynchronized();
         } else {
             this.log.debug("Status request within max status update age");
-            return Promise.resolve(this.lastStatus as StatusResponse);
+            return this.lastStatus;
         }
     }
 
-    getStatuses(): Promise<StatusResponse> {
-        if (this.ongoingStatusUpdate == null) {
-            this.ongoingStatusUpdate = new Promise<StatusResponse>((resolve, reject) => {
-                this.log.info("Fetching status update...");
-                
-                if (!this.api.isConnected()) {
-                    this.connect();
-                }
-                this.api.get({ schema: true }).then((schema: any) => {
-                    this.lastStatus = schema;
-                    this.lastStatusUpdate = new Date();
-                    this.ongoingStatusUpdate = null;
-                    resolve(this.lastStatus as StatusResponse);
-                }).catch((e: Error) => {
-                    this.log.error("An error occurred (during GET)!", e);
-                    this.lastStatusUpdate = new Date();
-                    this.ongoingStatusUpdate = null;
-                    reject(e);
-                });
-            });
-            return this.ongoingStatusUpdate;
+    async getStatusFromDeviceSynchronized(): Promise<RobovacStatus> {
+        if (this.ongoingStatusUpdate != null) {
+            this.log.debug("Duplicate status update request detected");
+            return this.ongoingStatusUpdate as Promise<RobovacStatus>;
         }
-        else {
-            this.log.debug("Duplicate status request detected");
-        }
-        return this.ongoingStatusUpdate as Promise<StatusResponse>;
+
+        this.ongoingStatusUpdate = this.getStatusFromDevice();
+        return this.ongoingStatusUpdate;
     }
 
-    set(dps: string, newValue: any): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            this.log.debug("Setting new value...");
+    async getStatusFromDevice(): Promise<RobovacStatus> {
+        this.log.info("Fetching status update...");
+        if (!this.api.isConnected()) {
+            await this.connect(); 
+        }
 
-            if (!this.api.isConnected()) {
-                this.connect();
+        try {
+            var schema = await this.api.get({ schema: true });
+            this.lastStatus = schema;
+            this.lastStatusUpdate = new Date();
+            this.ongoingStatusUpdate = null;
+            this.log.info("Status update retrieved.")
+            return this.lastStatus;
+        } catch(e) {
+            this.log.error("An error occurred (during GET status update)!", e);
+            try {
+                this.disconnect()
+            } catch(e) {
             }
-            this.api.set({ dps: dps, set: newValue }).then(() => {
-                resolve();
-            }).catch((error: Error) => {
-                this.log.error("An error occurred (during SET)!");
-                reject(error);
-            });
-        });
+            throw e;
+        }
     }
 
-    getPlayPause(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            this.getStatusesCached().then((statusResponse: StatusResponse) => {
-                resolve(<boolean>statusResponse.dps[StatusDps.PLAY_PAUSE]);
-            }).catch((error: Error) => {
-                reject(error);
-            });
-        });
+    async set(dps: StatusDps, newValue: any) {
+        this.log.debug("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "...");
+        if (!this.api.isConnected()) {
+            await this.connect(); 
+        }
+        
+        try {
+            await this.api.this.api.set({ dps: dps, set: newValue });
+            this.log.info("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "successful.");
+        } catch(e) {
+            this.log.error("An error occurred! (during SET of ", statusDpsFriendlyNames.get(dps), "to", newValue, ")");
+            try {
+                this.disconnect()
+            } catch(e) {
+            }
+            throw e;
+        }
     }
 
-    getDirection(): Promise<Direction> {
-        return new Promise<Direction>((resolve, reject) => {
-            this.getStatusesCached().then((statusResponse: StatusResponse) => {
-                resolve(<Direction>statusResponse.dps[StatusDps.DIRECTION]);
-            }).catch((error: Error) => {
-                reject(error);
-            });
-        });
+    async getRunning(): Promise<boolean> {
+        const robovacStatus = await this.getStatus();
+        return <boolean>robovacStatus.dps[StatusDps.RUNNING];
     }
 
-    getWorkStatus(): Promise<WorkStatus> {
-        return new Promise<WorkStatus>((resolve, reject) => {
-            this.getStatusesCached().then((statusResponse: StatusResponse) => {
-                resolve(<WorkStatus>statusResponse.dps[StatusDps.WORK_STATUS]);
-            }).catch((error: Error) => {
-                reject(error);
-            });
-        });
+    async getDirection(): Promise<Direction> {
+        const robovacStatus = await this.getStatus();
+        return <Direction>robovacStatus.dps[StatusDps.DIRECTION];
     }
 
-    getGoHome(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            this.getStatusesCached().then((statusResponse: StatusResponse) => {
-                resolve(<boolean>statusResponse.dps[StatusDps.GO_HOME]);
-            }).catch((error: Error) => {
-                reject(error);
-            });
-        });
+    async getWorkMode(): Promise<WorkMode> {
+        const robovacStatus = await this.getStatus();
+        return <WorkMode>robovacStatus.dps[StatusDps.WORK_MODE];
     }
 
-    getCleanSpeed(): Promise<CleanSpeed> {
-        return new Promise<CleanSpeed>((resolve, reject) => {
-            this.getStatusesCached().then((statusResponse: StatusResponse) => {
-                resolve(<CleanSpeed>statusResponse.dps[StatusDps.CLEAN_SPEED]);
-            }).catch((error: Error) => {
-                reject(error);
-            });
-        });
+    async getWorkStatus(): Promise<WorkStatus> {
+        const robovacStatus = await this.getStatus();
+        return <WorkStatus>robovacStatus.dps[StatusDps.WORK_STATUS];
     }
 
-    getFindRobot(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            this.getStatusesCached().then((statusResponse: StatusResponse) => {
-                resolve(<boolean>statusResponse.dps[StatusDps.FIND_ROBOT]);
-            }).catch((error: Error) => {
-                reject(error);
-            });
-        });
+    async getGoHome(): Promise<boolean> {
+        const robovacStatus = await this.getStatus();
+        return <boolean>robovacStatus.dps[StatusDps.GO_HOME];
     }
 
-    getBatteryLevel(): Promise<number> {
-        return new Promise<number>((resolve, reject) => {
-            this.getStatusesCached().then((statusResponse: StatusResponse) => {
-                resolve(<number>statusResponse.dps[StatusDps.BATTERY_LEVEL]);
-            }).catch((error: Error) => {
-                reject(error);
-            });
-        });
+    async getCleanSpeed(): Promise<CleanSpeed> {
+        const robovacStatus = await this.getStatus();
+        return <CleanSpeed>robovacStatus.dps[StatusDps.CLEAN_SPEED];
     }
 
-    getErrorCode(): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            this.getStatusesCached().then((statusResponse: StatusResponse) => {
-                resolve(<string>statusResponse.dps[StatusDps.ERROR_CODE]);
-            }).catch((error: Error) => {
-                reject(error);
-            });
-        });
+    async getFindRobot(): Promise<boolean> {
+        const robovacStatus = await this.getStatus();
+        return <boolean>robovacStatus.dps[StatusDps.FIND_ROBOT];
     }
 
-    getPlayPauseCached(): boolean | undefined {
-        return this.lastStatus.dps[StatusDps.PLAY_PAUSE];
+    async getBatteryLevel(): Promise<number> {
+        const robovacStatus = await this.getStatus();
+        return <number>robovacStatus.dps[StatusDps.BATTERY_LEVEL];
     }
 
-    getDirectionCached(): Direction | undefined {
-        return <Direction | undefined>this.lastStatus.dps[StatusDps.DIRECTION];
+    async getErrorCode(): Promise<string> {
+        const robovacStatus = await this.getStatus();
+        return <string>robovacStatus.dps[StatusDps.ERROR_CODE];
     }
 
-    getWorkStatusCached(): WorkStatus | undefined {
-        return <WorkStatus | undefined>this.lastStatus.dps[StatusDps.WORK_STATUS];
+    getRunningCached(): boolean | null {
+        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.RUNNING] : null;
     }
 
-    getGoHomeCached(): boolean | undefined {
-        return <boolean | undefined>this.lastStatus.dps[StatusDps.GO_HOME];
+    getDirectionCached(): Direction | null {
+        return this.lastStatusValid ? <Direction>this.lastStatus.dps[StatusDps.DIRECTION] : null;
     }
 
-    getCleanSpeedCached(): CleanSpeed | undefined {
-        return <CleanSpeed | undefined>this.lastStatus.dps[StatusDps.CLEAN_SPEED];
+    getWorkModeCached(): WorkMode | null {
+        return this.lastStatusValid ? <WorkMode>this.lastStatus.dps[StatusDps.WORK_MODE] : null;
     }
 
-    getFindRobotCached(): boolean | undefined {
-        return <boolean | undefined>this.lastStatus.dps[StatusDps.FIND_ROBOT];
+    getWorkStatusCached(): WorkStatus | null {
+        return this.lastStatusValid ? <WorkStatus>this.lastStatus.dps[StatusDps.WORK_STATUS] : null;
     }
 
-    getBatteryLevelCached(): number | undefined {
-        return <number | undefined>this.lastStatus.dps[StatusDps.BATTERY_LEVEL];
+    getGoHomeCached(): boolean | null {
+        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.GO_HOME] : null;
     }
 
-    getErrorCodeCached(): string | undefined {
-        return <string | undefined>this.lastStatus.dps[StatusDps.ERROR_CODE];
+    getCleanSpeedCached(): CleanSpeed | null {
+        return this.lastStatusValid ? <CleanSpeed>this.lastStatus.dps[StatusDps.CLEAN_SPEED] : null;
     }
 
-    setPlayPause(newValue: boolean): Promise<void> {
-        this.log.info("Setting PlayPause to", newValue, "...");
-        return this.set(StatusDps.PLAY_PAUSE, newValue);
+    getFindRobotCached(): boolean | null {
+        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.FIND_ROBOT] : null; 
     }
 
-    setDirection(newValue: string): Promise<void> {
-        this.log.info("Setting Direction to", newValue, "...");
+    getBatteryLevelCached(): number | null {
+        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.BATTERY_LEVEL] : null; 
+    }
+
+    getErrorCodeCached(): string | null {
+        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.ERROR_CODE] : null; 
+    }
+
+    async setPlayPause(newValue: boolean) {
+        return this.set(StatusDps.RUNNING, newValue);
+    }
+
+    async setDirection(newValue: Direction) {
         return this.set(StatusDps.DIRECTION, newValue);
     }
 
-    setWorkMode(newValue: string): Promise<void> {
-        this.log.info("Setting WorkMode to", newValue, "...");
+    async setWorkMode(newValue: string) {
         return this.set(StatusDps.WORK_MODE, newValue);
     }
 
-    setGoHome(newValue: boolean): Promise<void> {
-        this.log.info("Setting GoHome to", newValue, "...");
+    async setGoHome(newValue: boolean) {
         return this.set(StatusDps.GO_HOME, newValue);
     }
 
-    setCleanSpeed(newValue: string): Promise<void> {
-        this.log.info("Setting CleanSpeed to", newValue, "...");
+    async setCleanSpeed(newValue: string) {
         return this.set(StatusDps.CLEAN_SPEED, newValue);
     }
 
-    setFindRobot(newValue: boolean): Promise<void> {
-        this.log.info("Setting FindRobot to", newValue, "...");
+    async setFindRobot(newValue: boolean) {
         return this.set(StatusDps.FIND_ROBOT, newValue);
     }
 }
