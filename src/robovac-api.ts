@@ -166,7 +166,21 @@ export class RoboVac {
         });
 
         this.api.on('dp-refresh', (data: any) => {
-            log.debug('DP_REFRESH data from device: ', data);
+            if (this.consoleDebugLog) {
+                try {
+                    this.log.debug("Received dps refresh data from device:", "\n" + formatStatusResponse(data));
+                } catch (e) {
+                    this.log.debug("Received dps refresh data from device:", data)
+                }
+            } else {
+                this.log.debug("Received dps refresh data from device:", data)
+            }
+
+            if (data.dps) {
+                Object.assign(this.lastStatus, data);
+                this.lastStatusUpdate = new Date();
+                dataReceivedCallback(data);
+            }
         });
 
         this.api.on('data', (data: any) => {
@@ -281,7 +295,7 @@ export class RoboVac {
         }
 
         try {
-            await this.api.this.api.set({ dps: dps, set: newValue });
+            await this.api.set({ dps: dps, set: newValue });
             this.log.info("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "successful.");
         } catch (e) {
             this.log.error("An error occurred! (during SET of", statusDpsFriendlyNames.get(dps), "to", newValue, "): ", e);
