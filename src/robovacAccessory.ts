@@ -55,7 +55,7 @@ export class EufyRobovacAccessory {
     }
     this.vacuumService.setCharacteristic(this.platform.Characteristic.Name, "Vacuum");
     this.vacuumService.getCharacteristic(this.platform.Characteristic.On)
-      .onGet(this.getRunning.bind(this))
+      //.onGet(this.getRunning.bind(this))
       .onSet(this.setRunning.bind(this));
 
 
@@ -125,7 +125,7 @@ export class EufyRobovacAccessory {
     var counter = 0;
     if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
       this.log.info(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
-      //this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
+      this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
       counter++;
     }
     /**
