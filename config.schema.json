@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "Eufy RoboVac",
+  "pluginAlias": "EufyRobovac",
   "pluginType": "platform",
   "headerDisplay": "Configure your RoboVac devices here.",
   "singular": true,
@@ -22,17 +22,20 @@
             "deviceId": {
               "title": "Device ID",
               "type": "string",
-              "required": true
+              "required": true,
+              "default": "test"
             },
             "localKey": {
               "title": "Local Key",
               "type": "string",
-              "required": true
+              "required": true,
+              "default": "test"
             },
             "deviceIp": {
               "title": "Device IP",
               "type": "string",
-              "required": false
+              "required": false,
+              "default": "test"
             },
             "hideFindButton": {
               "title": "Hide Find Button",
@@ -62,7 +65,5 @@
         "default": false
       }
     }
-  },
-  "form": null,
-  "display": null
+  }
 }
