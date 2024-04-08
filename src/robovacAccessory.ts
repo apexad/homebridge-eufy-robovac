@@ -69,37 +69,23 @@ export class EufyRobovacAccessory {
   async getRunning(): Promise<CharacteristicValue> {
     this.log.debug(`getRunning for ${this.name}`);
 
-    try {
-      return await Promise.race([
-        this.roboVac.getRunning(),
-        new Promise<CharacteristicValue>((resolve, reject) => {
-          setTimeout(() => reject(new Error("Request timed out")), 1);
-        })
-      ]);
-    } catch {
+    let cachedRunning = this.roboVac.getRunningCached();
+
+    Promise.race([
+      this.roboVac.getRunning(),
+      new Promise<CharacteristicValue>((resolve, reject) => {
+        setTimeout(() => reject(new Error("Request timed out")), 1);
+      })
+    ]).catch(() => {
+      this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+    });
+
+
+    if (cachedRunning) {
+      return cachedRunning;
+    } else {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-
-    /**
-    return Promise.race([
-      new Promise<CharacteristicValue>((resolve, reject) => {
-        this.roboVac.getRunning().then((running: boolean) => {
-          this.log.info("Got result for getRunning:", running);
-          resolve(running);
-        }).catch((e) => {
-          this.log.info("No result from getRunning (error):", e);
-          reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-        });
-      }),
-      new Promise<CharacteristicValue>((resolve, reject) => {
-        setTimeout(() => {
-          this.log.info("No result from getRunning (timeout)");
-          reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-        }, this.callbackTimeout);
-      }),
-    ]);
-
-    */
   }
 
   /**
