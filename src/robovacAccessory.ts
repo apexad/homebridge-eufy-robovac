@@ -74,7 +74,7 @@ export class EufyRobovacAccessory {
     Promise.race([
       this.roboVac.getRunning(),
       new Promise<CharacteristicValue>((resolve, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 1);
+        setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
       })
     ]).catch(() => {
       this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
@@ -120,7 +120,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`updateCharacteristics for ${this.name}`);
     var counter = 0;
     if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
-      this.log.debug(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
+      this.log.info(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
       this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
       counter++;
     }
