@@ -71,7 +71,7 @@ export class EufyRobovacAccessory {
 
     let cachedRunning = this.roboVac.getRunningCached();
 
-    return false;
+    return true;
 
     /**
      * Promise.race([
@@ -125,7 +125,7 @@ export class EufyRobovacAccessory {
     var counter = 0;
     if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
       this.log.info(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
-      this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
+      //this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
       counter++;
     }
     /**
