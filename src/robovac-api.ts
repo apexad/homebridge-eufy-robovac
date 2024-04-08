@@ -284,7 +284,7 @@ export class RoboVac {
             await this.api.this.api.set({ dps: dps, set: newValue });
             this.log.info("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "successful.");
         } catch (e) {
-            this.log.error("An error occurred! (during SET of ", statusDpsFriendlyNames.get(dps), "to", newValue, ")");
+            this.log.error("An error occurred! (during SET of", statusDpsFriendlyNames.get(dps), "to", newValue, "): ", e);
             try {
                 this.disconnect()
             } catch (e) {
