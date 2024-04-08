@@ -131,4 +131,4 @@ dist
 .vscode/*
 
 # playground
-test.ts
+src/playground.ts
