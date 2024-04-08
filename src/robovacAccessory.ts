@@ -70,7 +70,12 @@ export class EufyRobovacAccessory {
     this.log.debug(`getRunning for ${this.name}`);
 
     try {
-      return await this.roboVac.getRunning();
+      return await Promise.race([
+        this.roboVac.getRunning(),
+        new Promise<CharacteristicValue>((resolve, reject) => {
+          setTimeout(() => reject(new Error("Request timed out")), 1);
+        })
+      ]);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
