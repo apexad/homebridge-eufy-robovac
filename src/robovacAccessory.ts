@@ -55,7 +55,7 @@ export class EufyRobovacAccessory {
     }
     this.vacuumService.setCharacteristic(this.platform.Characteristic.Name, "Vacuum");
     this.vacuumService.getCharacteristic(this.platform.Characteristic.On)
-      //.onGet(this.getRunning.bind(this))
+      .onGet(this.getRunning.bind(this))
       .onSet(this.setRunning.bind(this));
 
 
@@ -69,25 +69,16 @@ export class EufyRobovacAccessory {
   async getRunning(): Promise<CharacteristicValue> {
     this.log.debug(`getRunning for ${this.name}`);
 
-    return this.roboVac.getRunning();
-
-    /**
-     * Promise.race([
-      this.roboVac.getRunning(),
-      new Promise<CharacteristicValue>((resolve, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
-      })
-    ]).catch(() => {
-      this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-    });
-
-    if (cachedRunning) {
-      return cachedRunning;
-    } else {
+    try {
+      return await Promise.race([
+        this.roboVac.getRunning(),
+        new Promise<CharacteristicValue>((resolve, reject) => {
+          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+        })
+      ]);
+    } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    
-     */
   }
 
   /**
