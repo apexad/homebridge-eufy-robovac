@@ -1,5 +1,5 @@
 {
-  "displayName": "Eufy Robovac",
+  "displayName": "Homebridge Eufy Robovac",
   "name": "@hov3rcraft/homebridge-eufy-robovac",
   "version": "3.2.0",
   "description": "Homebridge support for Eufy RoboVac",
@@ -23,10 +23,10 @@
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
-      "eufy",
-      "robovac",
-      "homebridge",
-      "homebridge-plugin"
+    "eufy",
+    "robovac",
+    "homebridge",
+    "homebridge-plugin"
   ],
   "dependencies": {
     "tuyapi": "^7.5.2"

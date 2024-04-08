@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "Homebridge Eufy RoboVac",
+  "pluginAlias": "Eufy RoboVac",
   "pluginType": "platform",
   "headerDisplay": "Configure your RoboVac devices here.",
   "singular": true,
