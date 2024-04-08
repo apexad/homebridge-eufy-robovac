@@ -87,19 +87,17 @@ export class EufyRobovacAccessory {
    */
   async setRunning(state: CharacteristicValue) {
     this.log.debug(`setRunning for ${this.name} set to ${state}`);
-    return Promise.race([
-      new Promise<void>((resolve, reject) => {
-        let task = (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true);
-        task.then(() => {
-          resolve();
-        }).catch(() => {
-          reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-        });
-      }),
-      new Promise<void>((resolve, reject) => {
-        setTimeout(() => reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)), this.callbackTimeout);
-      }),
-    ]);
+
+    try {
+      return await Promise.race([
+        //(state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
+        new Promise<CharacteristicValue>((resolve, reject) => {
+          setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
+        })
+      ]);
+    } catch {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
   }
 
   /**
