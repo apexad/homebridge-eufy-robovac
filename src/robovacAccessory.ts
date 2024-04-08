@@ -130,7 +130,7 @@ export class EufyRobovacAccessory {
       counter++;
     }
      */
-    
+
     this.log.info(`New data from ${this.name} received - updated ${counter} characteristics.`)
   }
 }

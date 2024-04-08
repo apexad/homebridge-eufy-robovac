@@ -10,7 +10,7 @@ export class ConsoleLogger implements Logger {
     public readonly prefix?: string;
     public readonly logLevel: number;
 
-    constructor(logLevel:number=0, prefix?:string) {
+    constructor(logLevel: number = 0, prefix?: string) {
         this.prefix = prefix;
         this.logLevel = logLevel;
     }

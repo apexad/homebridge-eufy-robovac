@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "Eufy RoboVac",
+  "pluginAlias": "Homebridge Eufy RoboVac",
   "pluginType": "platform",
   "headerDisplay": "Configure your RoboVac devices here.",
   "singular": true,
@@ -7,12 +7,12 @@
     "type": "object",
     "properties": {
       "devices": {
-				"description": "For information on how to obtain deviceId and localKey, go [here](https://github.com/hov3rcraft/eufy-robovac#readme).",
-				"title": "Devices",
-				"type": "array",
-				"items": {
+        "description": "For information on how to obtain deviceId and localKey, go [here](https://github.com/hov3rcraft/eufy-robovac#readme).",
+        "title": "Devices",
+        "type": "array",
+        "items": {
           "type": "object",
-					"properties": {
+          "properties": {
             "name": {
               "title": "Name",
               "type": "string",

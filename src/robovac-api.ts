@@ -26,7 +26,7 @@ export const statusDpsFriendlyNames = new Map<string, string>([
     [StatusDps.FIND_ROBOT, "Find Robot"],
     [StatusDps.BATTERY_LEVEL, "Battery Level"],
     [StatusDps.ERROR_CODE, "Error Code"]
-]  
+]
 );
 
 export interface StatusResponse {
@@ -66,7 +66,7 @@ export function formatStatusResponse(statusResponse: StatusResponse): string {
     for (var dps of Object.values(StatusDps)) {
         if (statusResponse.dps.hasOwnProperty(dps)) {
             formattedStatus += `- ${statusDpsFriendlyNames.get(dps)}: ${(statusResponse.dps as any)[dps]}\n`
-        }   
+        }
     }
     formattedStatus += `-- Status End --`
     return formattedStatus;
@@ -132,7 +132,7 @@ export class RoboVac {
     log: Logger;
     consoleDebugLog: boolean;
 
-    constructor(config: { deviceId: string, localKey: string, deviceIp: string }, dataReceivedCallback: (statusResponse: StatusResponse) => void, cachingDuration: number, log:Logger = new ConsoleLogger()) {
+    constructor(config: { deviceId: string, localKey: string, deviceIp: string }, dataReceivedCallback: (statusResponse: StatusResponse) => void, cachingDuration: number, log: Logger = new ConsoleLogger()) {
         this.cachingDuration = cachingDuration;
         this.log = log;
         if (log instanceof ConsoleLogger) {
@@ -228,12 +228,12 @@ export class RoboVac {
         }
     }
 
-    getStatusCached(): RobovacStatus | null {
+    getStatusCached(): RobovacStatus | null {
         return this.lastStatusValid ? this.lastStatus : null;
     }
 
     async getStatus(): Promise<RobovacStatus> {
-        if (!this.lastStatusValid || Math.abs(new Date().getTime() - this.lastStatusUpdate.getTime()) > this.cachingDuration) {
+        if (!this.lastStatusValid || Math.abs(new Date().getTime() - this.lastStatusUpdate.getTime()) > this.cachingDuration) {
             return this.getStatusFromDeviceSynchronized();
         } else {
             this.log.debug("Status request within max status update age");
@@ -254,7 +254,7 @@ export class RoboVac {
     async getStatusFromDevice(): Promise<RobovacStatus> {
         this.log.info("Fetching status update...");
         if (!this.api.isConnected()) {
-            await this.connect(); 
+            await this.connect();
         }
 
         try {
@@ -264,11 +264,11 @@ export class RoboVac {
             this.ongoingStatusUpdate = null;
             this.log.info("Status update retrieved.")
             return this.lastStatus;
-        } catch(e) {
+        } catch (e) {
             this.log.error("An error occurred (during GET status update)!", e);
             try {
                 this.disconnect()
-            } catch(e) {
+            } catch (e) {
             }
             throw e;
         }
@@ -277,17 +277,17 @@ export class RoboVac {
     async set(dps: StatusDps, newValue: any) {
         this.log.debug("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "...");
         if (!this.api.isConnected()) {
-            await this.connect(); 
+            await this.connect();
         }
-        
+
         try {
             await this.api.this.api.set({ dps: dps, set: newValue });
             this.log.info("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "successful.");
-        } catch(e) {
+        } catch (e) {
             this.log.error("An error occurred! (during SET of ", statusDpsFriendlyNames.get(dps), "to", newValue, ")");
             try {
                 this.disconnect()
-            } catch(e) {
+            } catch (e) {
             }
             throw e;
         }
@@ -363,15 +363,15 @@ export class RoboVac {
     }
 
     getFindRobotCached(): boolean | null {
-        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.FIND_ROBOT] : null; 
+        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.FIND_ROBOT] : null;
     }
 
     getBatteryLevelCached(): number | null {
-        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.BATTERY_LEVEL] : null; 
+        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.BATTERY_LEVEL] : null;
     }
 
     getErrorCodeCached(): string | null {
-        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.ERROR_CODE] : null; 
+        return this.lastStatusValid ? this.lastStatus.dps[StatusDps.ERROR_CODE] : null;
     }
 
     async setPlayPause(newValue: boolean) {
