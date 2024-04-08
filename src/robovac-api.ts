@@ -221,7 +221,9 @@ export class RoboVac {
         this.lastStatusValid = false;
         this.ongoingStatusUpdate = null;
 
-        this.connect();
+        this.connect().catch((e) => {
+            this.log.error("Error during initial connect:", e);
+        });
     }
 
     async connect(): Promise<void> {
@@ -267,16 +269,16 @@ export class RoboVac {
 
     async getStatusFromDevice(): Promise<RobovacStatus> {
         this.log.info("Fetching status update...");
-        if (!this.api.isConnected()) {
-            await this.connect();
-        }
-
         try {
+            if (!this.api.isConnected()) {
+                await this.connect();
+            }
+
             var schema = await this.api.get({ schema: true });
             this.lastStatus = schema;
             this.lastStatusUpdate = new Date();
             this.ongoingStatusUpdate = null;
-            this.log.info("Status update retrieved.")
+            this.log.debug("Status update retrieved.")
             return this.lastStatus;
         } catch (e) {
             this.log.error("An error occurred (during GET status update)!", e);
@@ -290,11 +292,11 @@ export class RoboVac {
 
     async set(dps: StatusDps, newValue: any) {
         this.log.debug("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "...");
-        if (!this.api.isConnected()) {
-            await this.connect();
-        }
-
         try {
+            if (!this.api.isConnected()) {
+                await this.connect();
+            }
+
             await this.api.set({ dps: dps, set: newValue });
             this.log.info("Setting", statusDpsFriendlyNames.get(dps), "to", newValue, "successful.");
         } catch (e) {

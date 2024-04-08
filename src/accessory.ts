@@ -19,11 +19,11 @@ export class EufyRobovacAccessory {
 
 
   private readonly callbackTimeout = 3000;
-  private readonly cachingDuration: number = 15000;
+  private readonly cachingDuration: number = 60000;
 
   constructor(platform: EufyRobovacPlatform, accessory: PlatformAccessory, config: any, log: Logger) {
 
-    log.info(`Eufy Robovac starting`);
+    log.debug('Initializing EufyRobovacAccessory...');
 
     this.platform = platform;
     this.accessory = accessory;
@@ -60,6 +60,8 @@ export class EufyRobovacAccessory {
 
 
     this.roboVac = new RoboVac(this.connectionConfig, this.updateCharacteristics.bind(this), this.cachingDuration, this.log);
+
+    this.log.info('Finished initializing accessory:', this.name);
   }
 
   /**
@@ -90,7 +92,7 @@ export class EufyRobovacAccessory {
 
     try {
       return await Promise.race([
-        //(state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
+        (state) ? this.roboVac.setPlayPause(true) : this.roboVac.setGoHome(true),
         new Promise<CharacteristicValue>((resolve, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), this.callbackTimeout);
         })
@@ -111,7 +113,7 @@ export class EufyRobovacAccessory {
     this.log.debug(`updateCharacteristics for ${this.name}`);
     var counter = 0;
     if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
-      this.log.info(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
+      this.log.debug(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
       this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
       counter++;
     }

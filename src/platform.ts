@@ -1,7 +1,7 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { EufyRobovacAccessory } from './robovacAccessory';
+import { EufyRobovacAccessory } from './accessory';
 import { ConsoleLogger } from './consoleLogger';
 
 export class EufyRobovacPlatform implements DynamicPlatformPlugin {
