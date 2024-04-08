@@ -71,13 +71,18 @@ export class EufyRobovacAccessory {
     return Promise.race([
       new Promise<CharacteristicValue>((resolve, reject) => {
         this.roboVac.getRunning().then((running: boolean) => {
+          this.log.info("Got result for getRunning:", running);
           resolve(running);
-        }).catch(() => {
+        }).catch((e) => {
+          this.log.info("No result from getRunning (error):", e);
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         });
       }),
       new Promise<CharacteristicValue>((resolve, reject) => {
-        setTimeout(() => reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)), this.callbackTimeout);
+        setTimeout(() => {
+          this.log.info("No result from getRunniing (timeout)");
+          reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }, this.callbackTimeout);
       }),
     ]);
   }

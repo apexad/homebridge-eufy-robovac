@@ -244,7 +244,7 @@ export class RoboVac {
     async getStatusFromDeviceSynchronized(): Promise<RobovacStatus> {
         if (this.ongoingStatusUpdate != null) {
             this.log.debug("Duplicate status update request detected");
-            return this.ongoingStatusUpdate as Promise<RobovacStatus>;
+            return this.ongoingStatusUpdate;
         }
 
         this.ongoingStatusUpdate = this.getStatusFromDevice();
