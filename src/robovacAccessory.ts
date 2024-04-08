@@ -59,7 +59,7 @@ export class EufyRobovacAccessory {
       .onSet(this.setRunning.bind(this));
 
 
-    this.roboVac = new RoboVac(this.connectionConfig, this.updateCharacteristics, this.cachingDuration, this.log);
+    this.roboVac = new RoboVac(this.connectionConfig, this.updateCharacteristics.bind(this), this.cachingDuration, this.log);
   }
 
   /**
