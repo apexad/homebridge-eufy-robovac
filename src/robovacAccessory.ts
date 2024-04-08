@@ -66,13 +66,10 @@ export class EufyRobovacAccessory {
    * Handle the "GET" requests from HomeKit
    * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
    */
-  getRunning() {
+  async getRunning(): Promise<CharacteristicValue> {
     this.log.debug(`getRunning for ${this.name}`);
 
-    let cachedRunning = this.roboVac.getRunningCached();
-    this.roboVac.getRunning();
-
-    return cachedRunning ?? false;
+    return this.roboVac.getRunning();
 
     /**
      * Promise.race([
@@ -126,7 +123,7 @@ export class EufyRobovacAccessory {
     var counter = 0;
     if (statusResponse.dps[StatusDps.RUNNING] !== undefined) {
       this.log.info(`updating RUNNING for ${this.name} to ${statusResponse.dps[StatusDps.RUNNING]}`);
-      this.vacuumService.getCharacteristic(this.platform.Characteristic.On).updateValue(statusResponse.dps[StatusDps.RUNNING]);
+      //this.vacuumService.updateCharacteristic(this.platform.Characteristic.On, statusResponse.dps[StatusDps.RUNNING]);
       counter++;
     }
     /**
